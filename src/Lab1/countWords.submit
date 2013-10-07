@@ -1,7 +1,0 @@
-executable 	= /usr/bin/java
-universe 	= vanilla
-arguments	= WordCounter ../..//vinci.txt.$(Process) from 10 $(Process)
-output		= WordCounter.out.$(Process)
-log		= WordCounter.log
-error		= Main.err.$(Process)
-queue 10
