@@ -1,0 +1,20 @@
+table
+{
+   border:0 none;
+   width:100%;
+}
+
+.item {
+   cursor: hand;
+   font-family: "Verdana, Arial, Helvetica, sans-serif";
+   font-size: 14;
+   font-style: normal;
+   color: black;
+ }
+ 
+ .cell{ 
+   font-family: "Verdana, Arial, Helvetica, sans-serif";   
+   font-weight: normal; 
+   color: DarkBlue; 
+   font-size: 10pt;
+ }
