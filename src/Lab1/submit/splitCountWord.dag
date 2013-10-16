@@ -1,4 +1,0 @@
-# splitCountWord.dag
-Job Splitter splitter.sub
-Job WordCounter countWords.sub
-Parent Splitter Child WordCounter
