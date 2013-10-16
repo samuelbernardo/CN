@@ -1,69 +1,74 @@
 <?php
 
-// getting url parameters
+  // getting url parameters
+  $submit = $_GET['submit'];
+  $date = $_GET['date'];
+  $cellId = "";
+  $phoneId = "";
+  $time = "";
+  $sql = "";
 
-$submit=$_GET['submit'];
-$date=$_GET['date'];
-$cellId="";
-$phoneId="";
-$time="";
-$sql="";
-if ($submit!="query2"){
-	$phoneId=$_GET['phoneId'];
-	if($submit=="query1"){
-		$sql="SELECT cellId FROM visitedCells WHERE phoneId='$phoneId' and visitDate='$date'";	
-	}
+  if ($submit!="query2"){
+    $phoneId = $_GET['phoneId'];
+	if($submit == "query1"){
+		$sql = "SELECT cellId FROM visitedCells WHERE phoneId='$phoneId' and visitDate='$date'";	
+  }
 	else{
-		$sql="SELECT minutes FROM offMinutes WHERE phoneId='$phoneId' and offDate='$date'";	
+		$sql = "SELECT minutes FROM offMinutes WHERE phoneId='$phoneId' and offDate='$date'";	
 	}
-}
-else{
-	$cellId=$_GET['cellId'];
-	$time=$_GET['time'];
-	$sql="SELECT phoneId FROM presentPhones WHERE cellId='$cellId' and presentDate='$date' and presentTime='$time'";
-}
-echo"<div id='queryResult'>";
-echo($sql);	
-echo "/n submit=$submit date= $date cellId=$cellId phoneId=$phoneId time=$time";
+  }
+  else{
+    $cellId = $_GET['cellId'];
+	$time = $_GET['time'];
+	$sql = "SELECT phoneId FROM presentPhones WHERE cellId='$cellId' and presentDate='$date' and presentTime='$time'";
+  }
 
-// database connection
+  echo"<div id='queryResult'>";
+  // <DEBUG>
+  echo($sql);	
+  echo "/n submit=$submit date= $date cellId=$cellId phoneId=$phoneId time=$time";
+  // </DEBUG>
 
-$user = 'ist167074';
-$host = 'db.ist.utl.pt';
-$port=5432;		// por omiss�o, o Postgres responde nesta porta
-$password="eE92Hb41w";	// -> substituir pela password dada pelo psql_reset
-$dbname =$db_user;
 
-$connection = pg_connect("host=$host port=$port user=$user password=$password dbname=$dbname") or die(pg_last_error());
+  // database connection
+  $user = 'ist167074';
+  $host = 'db.ist.utl.pt';
+  $port = 5432;
+  $password = "eE92Hb41w";
+  $dbname = $db_user;
+  $connection = pg_connect("host=$host port=$port user=$user password=$password dbname=$dbname") or die(pg_last_error());
 	
-	echo("<p>Connected to Postgres on $host as user $user on database $dbname.</p>");
+  // <DEBUG>
+  echo("<p>Connected to Postgres on $host as user $user on database $dbname.</p>");
+  // </DEBUG>
 
 
-// query e show results
+  // query to get results
+  $result = pg_query($sql) or die('ERROR: ' . pg_last_error());
+  $num = pg_num_rows($result);
+  $fieldName = pg_field_name($result,0);
+  echo("<p>$num records retrieved:</p>");
 
-$result = pg_query($sql) or die('ERROR: ' . pg_last_error());
-	
-	$num = pg_num_rows($result);
-	$fieldName=pg_field_name($result,0);
-	echo("<p>$num records retrieved:</p>");
-
-	echo('<table border="5">');
-	echo("<tr><td>$fieldName </td></tr>");
-	while ($row = pg_fetch_row($result))
-	{
-		echo("<tr><td>");
-		echo($row[0]);
-		echo("</td></tr>");
-	}
-	echo("</table>");
+  echo('<table border="5">');
+  echo("<tr><td>$fieldName </td></tr>");
+  
+  while ($row = pg_fetch_row($result)) {
+    echo("<tr><td>");
+	echo($row[0]);
+	echo("</td></tr>");
+  }
+  echo("</table>");
 		
-	$result = pg_free_result($result) or die('ERROR: ' . pg_last_error());
-	
-	echo("<p>Query result freed.</p>");
-echo"</div>";
-//close connection: 
-pg_close($connection);
+  $result = pg_free_result($result) or die('ERROR: ' . pg_last_error());
+  //<DEBUG>
+  echo("<p>Query result freed.</p>");
+  //</DEBUG>
+  echo"</div>";
+
+  //close connection: 
+  pg_close($connection);
 ?>
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
    <head>
