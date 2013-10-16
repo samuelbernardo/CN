@@ -22,7 +22,7 @@ else{
 	$time=$_GET['time'];
 	$sql="SELECT phoneId FROM presentPhones WHERE cellId='$cellId' and presentDate='$date' and presentTime='$time'";
 }
-
+echo"<div id='queryResult'>";
 echo($sql);	
 echo "/n submit=$submit date= $date cellId=$cellId phoneId=$phoneId time=$time";
 
@@ -60,7 +60,7 @@ $result = pg_query($sql) or die('ERROR: ' . pg_last_error());
 	$result = pg_free_result($result) or die('ERROR: ' . pg_last_error());
 	
 	echo("<p>Query result freed.</p>");
-	
+echo"</div>";
 //close connection: 
 pg_close($connection);
 ?>
