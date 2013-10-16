@@ -1,0 +1,7 @@
+executable 	= /usr/bin/java
+universe 	= vanilla
+arguments	= Splitter vinci.txt 10
+output		= outputs/Splitter.out
+log		    = outputs/Splitter.log
+error		= outputs/Splitter.err
+queue 1
