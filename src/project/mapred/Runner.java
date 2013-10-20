@@ -1,4 +1,3 @@
-package project.mapred;
 
 import java.io.IOException;
 import java.util.*; 	
