@@ -9,7 +9,7 @@ import org.apache.hadoop.io.WritableComparable;
 /**
  * 
  */
-public class ReduceKey implements WritableComparable<ReduceKey> {
+public class IntermediateKey implements WritableComparable<IntermediateKey> {
     /**
      * Identifier can represent a phone or a cell.
      */
@@ -22,7 +22,7 @@ public class ReduceKey implements WritableComparable<ReduceKey> {
     /**
      * Constructor.
      */
-    public ReduceKey(String id, Date date) {
+    public IntermediateKey(Date date, String id) {
         this.id = id;
         this.date = date;
     }
@@ -59,7 +59,7 @@ public class ReduceKey implements WritableComparable<ReduceKey> {
      * @return -1, 0 or 1
      */
     @Override
-    public int compareTo(ReduceKey o){
+    public int compareTo(IntermediateKey o){
       return 
         (id.compareTo(o.getId()) == 0 ? this.date.compareTo(o.getDate()) : 
     	                                id.compareTo(o.getId())); 
