@@ -8,6 +8,9 @@ import org.apache.hadoop.mapred.*;
  	
  	public class Runner {
  	
+ 		/**
+ 		 * TODO
+ 		 */
  	   public static class Map 
  	    extends MapReduceBase 
  	    implements Mapper<LongWritable, Text, IntermediateKey, IntermediateValue> {
@@ -36,81 +39,84 @@ import org.apache.hadoop.mapred.*;
  	    		 Reporter reporter) throws IOException {
  	       
  	       String[] line = value.toString().split(", ");
-
+ 	       List<Text> list = new ArrayList<Text>();
+ 	       IntermediateValue iv;
+ 	       
  	       switch (Integer.parseInt(line[3])) {
- 	       case PHONE_JOINS_NETWORK:
- 	    	    List<String> list1 = new ArrayList<String>(); 
- 	    	    list1.add("0");
- 	    	    list1.add("Y");
- 	    	    output.collect(
-    	    	  new IntermediateKey(this.stringToDate(line[1]), line[4]), 
- 	    	    	  new IntermediateValue(this.stringToSeconds(line[2]), list1));
- 	    	   break;
- 	       case PHONE_LEAVES_NETWORK:
-	    	    List<String> list2 = new ArrayList<String>(); 
-	    	    list2.add("0");
-	    	    list2.add("N");
-	    	    output.collect(
-   	    	  new IntermediateKey(this.stringToDate(line[1]), line[4]), 
-	    	    	  new IntermediateValue(this.stringToSeconds(line[2]), list2)); 	    	   
+ 	       case PHONE_JOINS_NETWORK: 
+ 	    	    list.add(new Text("0"));
+ 	    	    list.add(new Text("Y"));
+ 	    	    iv = new OffIntermediateValue(list);
+ 	    	    this.collect(output, line[0], line[2], line[4], iv);
+ 	    	    break;
+ 	       case PHONE_LEAVES_NETWORK: 
+	    	    list.add(new Text("0"));
+	    	    list.add(new Text("N"));
+	    	    iv = new OffIntermediateValue(list);
+	    	    this.collect(output, line[0], line[2], line[4], iv); 	    	   
 	    	    break;
  	       case PHONE_JOINS_CELL:
-	    	    List<String> list3 = new ArrayList<String>(); 
-	    	    list3.add("N");
-	    	    list3.add("S");
-	    	    output.collect(
-  	    	      new IntermediateKey(this.stringToDate(line[1]), line[0]+line[4]), 
-	    	    	  new IntermediateValue(this.stringToSeconds(line[2]), list3));
-	    	    List<String> list4 = new ArrayList<String>(); 
-	    	    list4.add(line[0]);
-	    	    output.collect(
-   	    	      new IntermediateKey(this.stringToDate(line[1]), line[4]), 
-	    	    	  new IntermediateValue(this.stringToSeconds(line[2]), list4));
+	    	    list.add(new Text("N"));
+	    	    list.add(new Text("S"));
+	    	    iv = new PresentIntermediateValue(list);
+	    	    this.collect(output, line[0], line[2], line[0]+line[4], iv);
+	    	    list = new ArrayList<Text>(); 
+	    	    list.add(new Text(line[0]));
+	    	    iv = new CellsIntermediateValue(list);
+	    	    this.collect(output, line[0], line[2], line[4], iv);
  	    	   break;
  	       case PHONE_LEAVES_CELL:
-	    	    List<String> list5 = new ArrayList<String>(); 
-	    	    list5.add("S");
-	    	    list5.add("N");
-	    	    output.collect(
- 	    	      new IntermediateKey(this.stringToDate(line[1]), line[0]+line[4]), 
-	    	    	  new IntermediateValue(this.stringToSeconds(line[2]), list5));
+	    	    list.add(new Text("S"));
+	    	    list.add(new Text("N"));
+	    	    iv = new PresentIntermediateValue(list);
+	    	    this.collect(output, line[0], line[2], line[0]+line[4], iv);
  	    	   break;
  	       }
  	     }
- 	     
+	     
  	     /**
  	      * TODO
- 	      * @param date
- 	      */
- 	     public Date stringToDate(String date) {
- 	    	 return null;
- 	     }
- 	     
- 	     /**
- 	      * 
  	      * @param time
  	      * @return
+ 	      * @throws IOException 
  	      */
- 	     public int stringToSeconds(String time) {
- 	    	 return 0;
- 	     }
- 	     
+ 	     public void collect(
+ 	    		OutputCollector<IntermediateKey, IntermediateValue> output, 
+ 	    		String date, 
+ 	    		String time, 
+ 	    		String id, 
+ 	    		IntermediateValue value) throws IOException {
+ 	    	 output.collect(
+ 	    			 new IntermediateKey(
+ 	    					 new Text(date), new Text(time), new Text(id)), 
+ 	    			 value);
+ 	     }     
  	   }
  	
+ 	   /**
+ 	    * TODO
+ 	    */
  	   public static class Reduce 
  	    extends MapReduceBase 
- 	    implements Reducer<Text, IntWritable, Text, IntWritable> {
- 	     public void reduce(
- 	    		 Text key, 
- 	    		 Iterator<IntWritable> values, 
- 	    		 OutputCollector<Text, IntWritable> output, 
+ 	    implements Reducer<IntermediateKey, IntermediateValue, IntermediateKey, IntermediateValue> {
+ 		   AbstractMap<IntermediateKey, IntermediateValue> htable = 
+ 				   new HashMap<IntermediateKey, IntermediateValue>();
+
+ 		   /**
+ 		    * TODO
+ 		    */
+ 		   public void reduce(
+ 	    		IntermediateKey key, 
+ 	    		 Iterator<IntermediateValue> it, 
+ 	    		 OutputCollector<IntermediateKey, IntermediateValue> output, 
  	    		 Reporter reporter) throws IOException {
- 	       int sum = 0;
- 	       while (values.hasNext()) {
- 	         sum += values.next().get();
- 	       }
- 	       output.collect(key, new IntWritable(sum));
+
+ 	    	 while(it.hasNext()) {
+ 	    		 if(this.htable.containsKey(key)) { this.htable.get(key).merge(it.next()); }
+ 	    		 else { this.htable.put(key, it.next()); }
+ 	    	 }
  	     }
+
  	   }
  	
  	   public static void main(String[] args) throws Exception {

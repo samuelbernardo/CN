@@ -1,8 +1,7 @@
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.Date;
-
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparable;
 
 
@@ -11,27 +10,34 @@ import org.apache.hadoop.io.WritableComparable;
  */
 public class IntermediateKey implements WritableComparable<IntermediateKey> {
     /**
-     * Identifier can represent a phone or a cell.
+     * TODO
      */
-    private String id;
+    private Text date;
     /**
-     * This class holds the date and time values.
+     * TODO
      */
-    private Date date;
+    private Text time;
+    
+    /**
+     * TODO
+     */
+    private Text id;
 
     /**
      * Constructor.
      */
-    public IntermediateKey(Date date, String id) {
+    public IntermediateKey(Text date, Text time, Text id) {
+    	this.date = date;
+    	this.time = time;
         this.id = id;
-        this.date = date;
     }
 
     /**
      * Getters.
      */
-    public Date getDate() { return this.date; }
-    public String getId() { return this.id; } 
+    public Text getDate() { return this.date; }
+    public Text getTime() {return this.time; }
+    public Text getId() { return this.id; } 
 
     /**
      * Method that serializes the class fields.
@@ -39,8 +45,9 @@ public class IntermediateKey implements WritableComparable<IntermediateKey> {
      */
     @Override
     public void write(DataOutput out) throws IOException {
-	    out.writeChars(this.id);
-	    out.writeLong(this.date.getTime()); 
+    	this.date.write(out);
+    	this.time.write(out);
+    	this.id.write(out); 
     }
   
     /**
@@ -49,8 +56,9 @@ public class IntermediateKey implements WritableComparable<IntermediateKey> {
      */
     @Override
     public void readFields(DataInput in) throws IOException {
-	    this.id = in.readLine();
-	    this.date = new Date(in.readLong());
+	    this.date.readFields(in);
+	    this.time.readFields(in);
+	    this.id.readFields(in);
     }
   
     /**
@@ -61,7 +69,10 @@ public class IntermediateKey implements WritableComparable<IntermediateKey> {
     @Override
     public int compareTo(IntermediateKey o){
       return 
-        (id.compareTo(o.getId()) == 0 ? this.date.compareTo(o.getDate()) : 
-    	                                id.compareTo(o.getId())); 
+        this.date.compareTo(o.getDate()) == 0 ? 
+          this.time.compareTo(o.getTime()) == 0 ? 
+            this.id.compareTo(o.getId()) : 
+              this.time.compareTo(o.getTime()) : 
+                this.date.compareTo(o.getDate()); 
     }
 }

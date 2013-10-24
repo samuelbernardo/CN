@@ -4,30 +4,24 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparable;
 
 /**
  * TODO
  */
-public class IntermediateValue implements WritableComparable<IntermediateValue>{
+public abstract class IntermediateValue 
+  implements WritableComparable<IntermediateValue> {
 	
     /**
      * TODO
      */
-    private List<String> values;
-    
-    /**
-     * TODO
-     */
-    private int number;
-    
+    private List<Text> values;
+        
     /**
      * Constructor.
      */
-    public IntermediateValue(int number, List<String> values) {
-    	this.values = values;
-    	this.number = number;
-    }
+    public IntermediateValue(List<Text> values) { this.values = values; }
 
     /**
      * Method that serializes the class fields.
@@ -35,14 +29,9 @@ public class IntermediateValue implements WritableComparable<IntermediateValue>{
      */
 	@Override
 	public void write(DataOutput out) throws IOException {
-		Iterator<String> iterator = this.values.iterator();
-		
-		out.writeInt(this.number);
+		Iterator<Text> iterator = this.values.iterator();
 		out.writeInt(this.values.size());
-		
-		while(iterator.hasNext()) {
-			out.writeBytes(iterator.next()+'\n');
-		}
+		while(iterator.hasNext()) { iterator.next().write(out); }
 	}
 	
     /**
@@ -51,31 +40,31 @@ public class IntermediateValue implements WritableComparable<IntermediateValue>{
      */
 	@Override
 	public void readFields(DataInput in) throws IOException {
-		this.number = in.readInt();
-		
-		for(int counter = in.readInt(); counter > 0; counter--) {
-			this.values.add(in.readLine());
-		}
+		int counter;
+		Text tmp;
+		for(
+		  tmp = new Text(), counter = in.readInt(); 
+		  counter > 0; 
+		  tmp.readFields(in), counter--) { this.values.add(tmp); }
 	}
 	
 	/**
 	 * Getters
 	 */
-	public List<String> getValues() {
-		return this.values;
-	}
-	public int getNumber() {
-		return this.number;
-	}
+	public List<Text> getValues() { return this.values; }
 
 	/**
 	 * Compares two objects of the same class.
-	 * @return -1,0,1
+	 * @return always 0 (we are not sorting values).
 	 */
 	@Override
-	public int compareTo(IntermediateValue o) {
-		return this.number == o.getNumber()  ? 
-				0 : 
-				(this.number < o.getNumber() ? -1 : 1);
-	}
+	public int compareTo(IntermediateValue o) { return 0; }
+	
+	/**
+	 * This method merges two IntermediateValues into one. The local object
+	 * stores the resultant merged object.
+	 * @param iv 
+	 * @return - the merged object.
+	 */
+	public abstract IntermediateValue merge(IntermediateValue iv);
 }
