@@ -1,3 +1,4 @@
+package project.mapred;
 
 import java.io.IOException;
 import java.util.*; 	
@@ -18,10 +19,17 @@ import org.apache.hadoop.mapred.*;
  		   /**
  		    * Events to process
  		    */
- 		   private static final int PHONE_JOINS_NETWORK = 4; 
- 		   private static final int PHONE_LEAVES_NETWORK = 5; 
- 		   private static final int PHONE_JOINS_CELL = 2; 
- 		   private static final int PHONE_LEAVES_CELL = 3;
+ 		   public static final int PHONE_JOINS_NETWORK = 4; 
+ 		   public static final int PHONE_LEAVES_NETWORK = 5; 
+ 		   public static final int PHONE_JOINS_CELL = 2; 
+ 		   public static final int PHONE_LEAVES_CELL = 3;
+ 		   
+ 		   /**
+ 		    * Strings used for values.
+ 		    */
+ 		   public static final String YES = "Y";
+ 		   public static final String NO = "N";
+ 		  public static final String ZERO = "0";
 
  	
  	     /**
@@ -43,21 +51,23 @@ import org.apache.hadoop.mapred.*;
  	       IntermediateValue iv;
  	       
  	       switch (Integer.parseInt(line[3])) {
- 	       case PHONE_JOINS_NETWORK: 
- 	    	    list.add(new Text("0"));
- 	    	    list.add(new Text("Y"));
+ 	       case PHONE_JOINS_NETWORK:
+ 	    	    list.add(new Text(this.getNumberSeconds(line[2])));
+ 	    	    list.add(new Text(Map.ZERO));
+ 	    	    list.add(new Text(Map.YES));
  	    	    iv = new OffIntermediateValue(list);
  	    	    this.collect(output, line[0], line[2], line[4], iv);
  	    	    break;
  	       case PHONE_LEAVES_NETWORK: 
-	    	    list.add(new Text("0"));
-	    	    list.add(new Text("N"));
+ 	    	    list.add(new Text(this.getNumberSeconds(line[2])));
+	    	    list.add(new Text(Map.ZERO));
+	    	    list.add(new Text(Map.NO));
 	    	    iv = new OffIntermediateValue(list);
 	    	    this.collect(output, line[0], line[2], line[4], iv); 	    	   
 	    	    break;
  	       case PHONE_JOINS_CELL:
-	    	    list.add(new Text("N"));
-	    	    list.add(new Text("S"));
+	    	    list.add(new Text(Map.NO));
+	    	    list.add(new Text(Map.YES));
 	    	    iv = new PresentIntermediateValue(list);
 	    	    this.collect(output, line[0], line[2], line[0]+line[4], iv);
 	    	    list = new ArrayList<Text>(); 
@@ -66,8 +76,8 @@ import org.apache.hadoop.mapred.*;
 	    	    this.collect(output, line[0], line[2], line[4], iv);
  	    	   break;
  	       case PHONE_LEAVES_CELL:
-	    	    list.add(new Text("S"));
-	    	    list.add(new Text("N"));
+	    	    list.add(new Text(Map.YES));
+	    	    list.add(new Text(Map.NO));
 	    	    iv = new PresentIntermediateValue(list);
 	    	    this.collect(output, line[0], line[2], line[0]+line[4], iv);
  	    	   break;
@@ -90,15 +100,32 @@ import org.apache.hadoop.mapred.*;
  	    			 new IntermediateKey(
  	    					 new Text(date), new Text(time), new Text(id)), 
  	    			 value);
- 	     }     
+ 	     }
+ 	     
+ 	 	   /**
+ 	 	    * 
+ 	 	    * @param time
+ 	 	    * @return
+ 	 	    */
+ 	 	   public String getNumberSeconds(String time) {
+ 	 		    Integer hours = Integer.parseInt(time.substring(0,2));
+ 		    	Integer mins = Integer.parseInt(time.substring(2,4));
+ 		    	Integer secs = Integer.parseInt(time.substring(4,6));
+ 		    	secs += (hours*60 + mins)*60;
+ 		    	return secs.toString();
+ 	 	   }
  	   }
- 	
+ 	    	
  	   /**
  	    * TODO
  	    */
  	   public static class Reduce 
  	    extends MapReduceBase 
  	    implements Reducer<IntermediateKey, IntermediateValue, IntermediateKey, IntermediateValue> {
+ 		   /**
+ 		    * This map will keep the objects already in the collector (through 
+ 		    * all calls to reduce function).
+ 		    */
  		   AbstractMap<IntermediateKey, IntermediateValue> htable = 
  				   new HashMap<IntermediateKey, IntermediateValue>();
 
@@ -112,7 +139,8 @@ import org.apache.hadoop.mapred.*;
  	    		 Reporter reporter) throws IOException {
 
  	    	 while(it.hasNext()) {
- 	    		 if(this.htable.containsKey(key)) { this.htable.get(key).merge(it.next()); }
+ 	    		 if(this.htable.containsKey(key)) 
+ 	    		 { this.htable.get(key).merge(it.next()); }
  	    		 else { this.htable.put(key, it.next()); }
  	    	 }
  	     }

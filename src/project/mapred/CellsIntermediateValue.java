@@ -17,7 +17,7 @@ public class CellsIntermediateValue extends IntermediateValue{
 	 */
 	@Override
 	public IntermediateValue merge(IntermediateValue iv) {
-		// TODO Auto-generated method stub
+		this.values.addAll(iv.getValues());
 		return iv;
 	}
 }

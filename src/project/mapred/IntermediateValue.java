@@ -16,7 +16,7 @@ public abstract class IntermediateValue
     /**
      * TODO
      */
-    private List<Text> values;
+    protected List<Text> values;
         
     /**
      * Constructor.
