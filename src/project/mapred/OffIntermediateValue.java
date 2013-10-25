@@ -1,8 +1,10 @@
+package project.mapred;
+
 import java.util.List;
 
 import org.apache.hadoop.io.Text;
 
-import project.mapred.Runner;
+import project.mapred.Runner.Map;
 
 /**
  * TODO

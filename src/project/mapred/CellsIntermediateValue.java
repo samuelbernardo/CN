@@ -1,3 +1,5 @@
+package project.mapred;
+
 import java.util.List;
 
 import org.apache.hadoop.io.Text;
