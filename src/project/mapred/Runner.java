@@ -25,11 +25,12 @@ import org.apache.hadoop.mapred.*;
  		   public static final int PHONE_LEAVES_CELL = 3;
  		   
  		   /**
- 		    * Strings used for values.
+ 		    * Constants used for values.
  		    */
  		   public static final String YES = "Y";
  		   public static final String NO = "N";
  		  public static final String ZERO = "0";
+ 		  public static final int SECONDS_IN_DAY = 60*60*60;
 
  	
  	     /**
@@ -52,16 +53,21 @@ import org.apache.hadoop.mapred.*;
  	       
  	       switch (Integer.parseInt(line[3])) {
  	       case PHONE_JOINS_NETWORK:
- 	    	    list.add(new Text(this.getNumberSeconds(line[2])));
+ 	    	    list.add(new Text(new Integer(
+ 	    	      this.getNumberSeconds(line[2])).toString()));
  	    	    list.add(new Text(Map.ZERO));
  	    	    list.add(new Text(Map.YES));
+ 	    	    list.add(new Text(Map.ZERO));
  	    	    iv = new OffIntermediateValue(list);
  	    	    this.collect(output, line[0], line[2], line[4], iv);
  	    	    break;
  	       case PHONE_LEAVES_NETWORK: 
- 	    	    list.add(new Text(this.getNumberSeconds(line[2])));
+ 	    	    list.add(new Text(new Integer(
+ 	    	      this.getNumberSeconds(line[2])).toString()));
 	    	    list.add(new Text(Map.ZERO));
 	    	    list.add(new Text(Map.NO));
+	    	    list.add(new Text(new Integer(
+	    	      Map.SECONDS_IN_DAY - this.getNumberSeconds(line[2])).toString()));
 	    	    iv = new OffIntermediateValue(list);
 	    	    this.collect(output, line[0], line[2], line[4], iv); 	    	   
 	    	    break;
@@ -107,12 +113,12 @@ import org.apache.hadoop.mapred.*;
  	 	    * @param time
  	 	    * @return
  	 	    */
- 	 	   public String getNumberSeconds(String time) {
+ 	 	   public int getNumberSeconds(String time) {
  	 		    Integer hours = Integer.parseInt(time.substring(0,2));
  		    	Integer mins = Integer.parseInt(time.substring(2,4));
  		    	Integer secs = Integer.parseInt(time.substring(4,6));
  		    	secs += (hours*60 + mins)*60;
- 		    	return secs.toString();
+ 		    	return secs;
  	 	   }
  	   }
  	    	
@@ -126,8 +132,8 @@ import org.apache.hadoop.mapred.*;
  		    * This map will keep the objects already in the collector (through 
  		    * all calls to reduce function).
  		    */
- 		   AbstractMap<IntermediateKey, IntermediateValue> htable = 
- 				   new HashMap<IntermediateKey, IntermediateValue>();
+ 		   AbstractMap<String, IntermediateValue> htable = 
+ 				   new HashMap<String, IntermediateValue>();
 
  		   /**
  		    * TODO
@@ -138,10 +144,15 @@ import org.apache.hadoop.mapred.*;
  	    		 OutputCollector<IntermediateKey, IntermediateValue> output, 
  	    		 Reporter reporter) throws IOException {
 
+ 			 String hkey = key.getDate().toString()+key.getId().toString();
  	    	 while(it.hasNext()) {
- 	    		 if(this.htable.containsKey(key)) 
- 	    		 { this.htable.get(key).merge(it.next()); }
- 	    		 else { this.htable.put(key, it.next()); }
+ 	    		 if(this.htable.containsKey(hkey)) 
+ 	    		 { this.htable.get(hkey).merge(it.next()); }
+ 	    		 else {
+ 	    			 // TODO: day transition
+ 	    			 this.htable.put(hkey, it.next());
+ 	    			 output.collect(key, this.htable.get(hkey));
+ 	    	     }
  	    	 }
  	     }
 

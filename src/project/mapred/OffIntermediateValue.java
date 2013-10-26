@@ -21,8 +21,9 @@ public class OffIntermediateValue extends IntermediateValue{
 	 * Just to remember,
 	 * values (List):
 	 *  - number of seconds for the last event;
-	 *  - number of seconds offline
-	 *  - if the phone is off the network after the last event.
+	 *  - number of offline seconds before the last event; 
+	 *  - if the phone is off the network after the last event;
+	 *  - number of expected offline seconds for all the day.
 	 */
 	@Override
 	public IntermediateValue merge(IntermediateValue iv) {
@@ -42,10 +43,14 @@ public class OffIntermediateValue extends IntermediateValue{
 			total += s3-s4;
 		}
 		
+		// get the expected number of offline seconds for all the day.
+		int s5 = Integer.parseInt(iv.getValues().get(3).toString());
+		 
 		this.values.set(0, iv.getValues().get(0));
 		this.values.set(1, new Text(total.toString()));
 		this.values.set(2, iv.getValues().get(2));
+		this.values.set(3, new Text(new Integer(total + s5).toString()));
 		
-		return iv;
+		return this;
 	}
 }

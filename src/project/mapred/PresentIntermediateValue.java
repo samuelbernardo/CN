@@ -16,10 +16,16 @@ public class PresentIntermediateValue extends IntermediateValue{
 
 	/**
 	 * See base class for doc.
+	 * Just to remember,
+	 * values (List):
+	 *  - number of seconds for the last event;
+	 *  - [Y/N]*12
 	 */
 	@Override
 	public IntermediateValue merge(IntermediateValue iv) {
 		// TODO Auto-generated method stub
-		return iv;
+		// copy the iv list from its hour until de end.
+		//  
+		return this;
 	}
 }
