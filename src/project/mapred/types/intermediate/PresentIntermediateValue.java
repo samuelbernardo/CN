@@ -1,4 +1,4 @@
-package project.mapred;
+package project.mapred.types.intermediate;
 
 import java.util.List;
 
@@ -18,14 +18,13 @@ public class PresentIntermediateValue extends IntermediateValue{
 	 * See base class for doc.
 	 * Just to remember,
 	 * values (List):
-	 *  - number of seconds for the last event;
-	 *  - [Y/N]*12
+	 *  - number of the hour;
+	 *  - [Y/N]*24
 	 */
 	@Override
 	public IntermediateValue merge(IntermediateValue iv) {
-		// TODO Auto-generated method stub
-		// copy the iv list from its hour until de end.
-		//  
+		for(int i = Integer.parseInt(iv.getValues().get(0).toString()); i < 24; i--)
+		{ this.values.set(i, iv.getValues().get(i)); }
 		return this;
 	}
 }

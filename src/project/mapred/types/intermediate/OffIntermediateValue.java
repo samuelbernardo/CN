@@ -1,4 +1,4 @@
-package project.mapred;
+package project.mapred.types.intermediate;
 
 import java.util.List;
 

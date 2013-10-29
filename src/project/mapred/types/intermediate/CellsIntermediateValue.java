@@ -1,4 +1,4 @@
-package project.mapred;
+package project.mapred.types.intermediate;
 
 import java.util.List;
 
@@ -22,6 +22,11 @@ public class CellsIntermediateValue extends IntermediateValue{
 	 */
 	@Override
 	public IntermediateValue merge(IntermediateValue iv) {
+		// WARNING: there could be an issue here. If in the first hour of a day,
+		// the phone leaves the cell before pinging it, we will not record that
+		// the phone was in that cell.
+		// UGLY SOLUTION: see if the disconnection happens within the first 
+		// hour and reproduce a ping.
 		this.values.addAll(iv.getValues());
 		return this;
 	}
