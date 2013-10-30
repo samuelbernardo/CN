@@ -44,6 +44,8 @@ import project.mapred.types.intermediate.*;
  		    */
  		   public static final String YES = "Y";
  		   public static final String NO = "N";
+ 		   public static final char ENTER = '+';
+ 		   public static final char LEAVE = '-';
  		   public static final String ZERO = "0";
  		   public static final int SECONDS_IN_HOUR = 60*60;
  		   public static final int SECONDS_IN_DAY = SECONDS_IN_HOUR*60;
@@ -76,7 +78,7 @@ import project.mapred.types.intermediate.*;
  	    	    list.add(new Text(Map.YES));
  	    	    list.add(new Text(Map.ZERO));
  	    	    iv = new OffIntermediateValue(list);
- 	    	    this.collect(output, line[0], line[2], line[4], iv);
+ 	    	    this.collect(output, line[1], line[2], line[4], iv);
  	    	    break;
  	       case PHONE_LEAVES_NETWORK: 
  	    	    list.add(new Text(new Integer(
@@ -86,37 +88,37 @@ import project.mapred.types.intermediate.*;
 	    	    list.add(new Text(new Integer(
 	    	      Map.SECONDS_IN_DAY - this.getNumberSeconds(line[2])).toString()));
 	    	    iv = new OffIntermediateValue(list);
-	    	    this.collect(output, line[0], line[2], line[4], iv); 	    	   
+	    	    this.collect(output, line[1], line[2], line[4], iv); 	    	   
 	    	    break;
  	       case PHONE_JOINS_CELL:
-	    	    this.buildPresenceList(list, line[2], Map.NO, Map.YES); 
+	    	    list.add(new Text(line[4] + Map.ENTER)); 
 	    	    iv = new PresentIntermediateValue(list);
-	    	    this.collect(output, line[0], line[2], line[0]+line[4], iv);
+	    	    this.collect(output, line[1], line[2], line[0]+line[2].substring(0, 2), iv);
 	    	    list = new ArrayList<Text>(); 
 	    	    list.add(new Text(line[0]));
 	    	    iv = new CellsIntermediateValue(list);
-	    	    this.collect(output, line[0], line[2], line[4], iv);
+	    	    this.collect(output, line[1], line[2], line[4], iv);
  	    	   break;
  	       case PHONE_LEAVES_CELL:
- 	    	    this.buildPresenceList(list, line[2], Map.YES, Map.NO);
+ 	    	    list.add(new Text(line[4] + Map.LEAVE));
 	    	    iv = new PresentIntermediateValue(list);
-	    	    this.collect(output, line[0], line[2], line[0]+line[4], iv);
+	    	    this.collect(output, line[1], line[2], line[0]+line[2].substring(0, 2), iv);
  	    	   break;
  	       case PHONE_INIT_CALL:
  	       case PHONE_TERM_CALL:
  	       case PHONE_PINGS_CELL:
- 	    	   // If the first hour is gone, we don't need this "still alive"
- 	    	   // messages. 
- 	    	   if (this.getNumberSeconds(line[2]) >= SECONDS_IN_HOUR) break;
-	    	    list.add(new Text(Map.YES));
-	    	    list.add(new Text(Map.YES));
+ 	    	    list.add(new Text(line[4] + Map.ENTER));
 	    	    iv = new PresentIntermediateValue(list);
-	    	    this.collect(output, line[0], line[2], line[0]+line[4], iv);
-	    	    list = new ArrayList<Text>(); 
-	    	    list.add(new Text(line[0]));
-	    	    iv = new CellsIntermediateValue(list);
-	    	    this.collect(output, line[0], line[2], line[4], iv);
- 	    	   break;
+	    	    this.collect(output, line[1], line[2], line[0]+line[2].substring(0, 2), iv);
+ 	    	    // If the first hour is gone, we don't need this "still alive"
+ 	    	    // messages. 
+ 	    	    if (this.getNumberSeconds(line[2]) >= SECONDS_IN_HOUR) {
+	    	      list = new ArrayList<Text>(); 
+	    	      list.add(new Text(line[0]));
+	    	      iv = new CellsIntermediateValue(list);
+	    	      this.collect(output, line[1], line[2], line[4], iv);
+ 	    	    }
+ 	    	    break;
  	       }
  	     }
 	     
@@ -149,28 +151,6 @@ import project.mapred.types.intermediate.*;
  		    	Integer secs = Integer.parseInt(time.substring(4,6));
  		    	secs += (hours*60 + mins)*60;
  		    	return secs;
- 	 	   }
- 	 	   
- 	 	   /**
- 	 	    * TODO
- 	 	    * @param list
- 	 	    * @param time
- 	 	    * @param initialState
- 	 	    * @param finalState
- 	 	    */
- 	 	   public void buildPresenceList(
- 	 			   List<Text> list, 
- 	 			   String time, 
- 	 			   String initialState, 
- 	 			   String finalState) {
- 	 		   // WARNING: re-check that integer division is rounded by chopping
-	    	   // off the decimal digits. 
- 	 		   int hour = this.getNumberSeconds(time)/SECONDS_IN_HOUR;
- 	 		   list.add(new Text(new Integer(hour).toString()));
-	    	   for (int c =  hour + 1; c > 0; c--) 
-	    	   { list.add(new Text(initialState)); }
-	    	   for (int c = HOURS_IN_DAY - hour - 1; c > 0; c--) 
-	    	   { list.add(new Text(finalState)); }
  	 	   }
  	   }
  	    			   
