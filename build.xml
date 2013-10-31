@@ -1,0 +1,339 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project name="mobile-net" basedir="." default="run">
+	<property name="server" value="cluster.rnl.ist.utl.pt"/>
+	
+  <!-- ====================================================== -->
+  <!-- Load all the default properties, and any the user wants-->
+  <!-- ====================================================== -->
+  <property file="${user.home}/build.properties" />
+  <property file="${basedir}/build.properties" />
+	
+	<property name="src.dir" value="${workspace}/src"/>  	
+  <property name="prj.src.dir" value="${src.dir}/project"/>
+  <property name="mapred.src.dir" value="${prj.src.dir}/mapred"/>
+  <property name="hdfs.src.dir" value="${prj.src.dir}/hdfs"/>
+	<property name="hdfs_base_dir" value="/tmp/${username}/${ant.project.name}" />
+	<property name="local_base_dir" value="${workspace}/${ant.project.name}" />
+
+  <property name="Name" value="Mobile-Net"/>
+  <property name="name" value="mobile-net"/>
+  <property name="final.name" value="${name}-${version}"/>
+  <property name="test.final.name" value="${name}-test-${version}"/>
+  
+  <property name="build.dir" value="${basedir}/build"/>
+  <property name="conf.dir" value="${basedir}/conf"/>
+  <property name="lib.dir" value="${basedir}/lib"/>
+  <property name="build.classes" value="${build.dir}/classes"/>
+  <property name="build.src" value="${build.dir}/src"/>
+  
+  <property name="build.encoding" value="UTF-8"/>
+  
+  <property name="javac.debug" value="on"/>
+  <property name="javac.optimize" value="on"/>
+  <property name="javac.deprecation" value="off"/>
+  <property name="javac.version" value="1.6"/>
+  <property name="javac.args" value=""/>
+  <property name="javac.args.warnings" value="-Xlint:unchecked"/>
+  
+  <!-- Use environment -->
+  <property environment="env" />
+	
+	<!-- the normal classpath -->
+  <path id="classpath">
+    <pathelement location="${build.classes}"/>
+    <path refid="src.lib.classpath"/>
+  </path>
+
+  <path id="src.lib.classpath">
+    <fileset dir="${lib.dir}">
+      <include name="**/*.jar" />
+      <exclude name="**/excluded/" />
+    </fileset>
+  </path>
+
+  <!--path id="test.lib.classpath">
+    <fileset dir="${test.lib.dir}">
+      <include name="**/*.jar"/>
+      <exclude name="**/excluded/"/>
+    </fileset>
+  </path-->
+	
+	<!-- the unit test classpath: uses test.src.dir for configuration -->
+  <!--path id="test.classpath">
+    <pathelement location="${test.build.extraconf}"/>
+    <pathelement location="${test.build.classes}" />
+    <pathelement location="${test.src.dir}"/>
+    <pathelement location="${build.dir}"/>
+    <pathelement location="${build.examples}"/>
+    <pathelement location="${build.tools}"/>
+    <pathelement path="${clover.jar}"/>
+    <path refid="test.lib.classpath"/>
+    <pathelement location="${hadoop-core.jar}"/>
+    <path refid="classpath"/>
+  </path-->
+	
+  <!-- ====================================================== -->
+  <!-- Create needed directories                              -->
+  <!-- ====================================================== -->
+	<target name="init">
+    <mkdir dir="${build.dir}"/>
+    <mkdir dir="${build.classes}"/>
+    <mkdir dir="${build.src}"/>
+ 
+    <!--mkdir dir="${test.build.dir}"/>
+    <mkdir dir="${test.build.classes}"/>
+    <mkdir dir="${test.build.testjar}"/>
+    <mkdir dir="${test.build.testshell}"/>
+    <mkdir dir="${test.build.extraconf}"/-->
+
+    <!--copy todir="${conf.dir}" verbose="true">
+      <fileset dir="${conf.dir}" includes="**/*.template"/>
+      <mapper type="glob" from="*.template" to="*"/>
+    </copy-->
+
+    <!--exec executable="sh">
+       <arg line="src/saveVersion.sh ${version} ${build.dir}"/>
+    </exec-->
+    
+  </target>
+
+  <!--import file="${test.src.dir}/additional_confs.xml"/-->
+
+  <!-- ====================================================== -->
+  <!-- Compile the Java files                                 -->
+  <!-- ====================================================== -->
+  
+  <target name="compile-classes" depends="init" description="compile mobile-net classes">
+    <!-- Compile Java files checking warnings -->
+    <javac 
+        encoding="${build.encoding}"
+        srcdir="${mapred.src.dir}"
+        includes="org/apache/hadoop/**/*.java"
+        destdir="${build.classes}"
+        debug="${javac.debug}"
+        optimize="${javac.optimize}"
+        target="${javac.version}"
+        source="${javac.version}"
+        deprecation="${javac.deprecation}">
+      <compilerarg line="${javac.args} ${javac.args.warnings}" />
+      <classpath refid="classpath"/>
+    </javac>
+  </target>
+
+  <target name="compile"
+					depends="compile-classes"
+					description="Compile all project">
+  </target>
+  
+
+  <!-- ================================================================== -->
+  <!-- Make jar                                                           -->
+  <!-- ================================================================== -->
+  <!--target name="jar" depends="compile" description="Make jar">
+    <tar compression="gzip" destfile="${build.classes}/bin.tgz">
+      <tarfileset dir="bin" mode="755"/>
+    </tar>
+    <property name="jar.properties.list"
+      value="commons-logging.properties, log4j.properties, hadoop-metrics.properties, task-log4j.properties"/>
+    <jar jarfile="${build.dir}/${core.final.name}.jar"
+         basedir="${build.classes}">
+      <manifest>
+        <section name="org/apache/hadoop">
+          <attribute name="Implementation-Title" value="Hadoop"/>
+          <attribute name="Implementation-Version" value="${version}"/>
+          <attribute name="Implementation-Vendor" value="Apache"/>
+        </section>
+      </manifest>
+      <service type="org.apache.hadoop.security.token.TokenRenewer">
+        <provider classname="org.apache.hadoop.hdfs.DFSClient$Renewer"/>
+        <provider classname="org.apache.hadoop.mapred.JobClient$Renewer"/>
+        <provider classname="org.apache.hadoop.hdfs.security.token.block.BlockTokenIdentifier$Renewer"/>
+        <provider classname="org.apache.hadoop.mapreduce.security.token.JobTokenIdentifier$Renewer"/>
+        <provider classname="org.apache.hadoop.hdfs.HftpFileSystem$TokenManager"/>
+        <provider classname="org.apache.hadoop.hdfs.HsftpFileSystem$TokenManager"/>
+        <provider classname="org.apache.hadoop.hdfs.web.WebHdfsFileSystem$DtRenewer"/>
+      </service>
+      <fileset dir="${conf.dir}" includes="${jar.properties.list}" />
+      <fileset file="${jar.extra.properties.list}" />
+      <zipfileset dir="${build.webapps}" prefix="webapps"/>
+    </jar>
+    <mkdir dir="${build.dir}/empty"/>
+    <jar jarfile="${build.dir}/${hadoop-client.final.name}.jar"
+         basedir="${build.dir}/empty">
+      <manifest>
+        <section name="org/apache/hadoop">
+          <attribute name="Implementation-Title" value="Hadoop Client"/>
+          <attribute name="Implementation-Version" value="${version}"/>
+          <attribute name="Implementation-Vendor" value="Apache"/>
+        </section>
+      </manifest>
+    </jar>
+    <jar jarfile="${build.dir}/${hadoop-minicluster.final.name}.jar"
+         basedir="${build.dir}/empty">
+      <manifest>
+        <section name="org/apache/hadoop">
+          <attribute name="Implementation-Title" value="Hadoop Minicluster"/>
+          <attribute name="Implementation-Version" value="${version}"/>
+          <attribute name="Implementation-Vendor" value="Apache"/>
+        </section>
+      </manifest>
+    </jar>
+  </target-->
+  
+  <!-- ================================================================== -->
+  <!-- Compile test code                                                  --> 
+  <!-- ================================================================== -->
+  <!--target name="compile-core-test" depends="compile-examples, compile-tools, generate-test-records">
+    <javac 
+     encoding="${build.encoding}" 
+     srcdir="${test.generated.dir}"
+     includes="org/apache/hadoop/**/*.java"
+     destdir="${test.build.classes}"
+     debug="${javac.debug}"
+     optimize="${javac.optimize}"
+     target="${javac.version}"
+     source="${javac.version}"
+     deprecation="${javac.deprecation}">
+      <compilerarg line="${javac.args}" />
+      <classpath refid="test.classpath"/>
+    </javac>
+    <javac 
+     encoding="${build.encoding}" 
+     srcdir="${test.src.dir}"
+     includes="org/apache/hadoop/**/*.java"
+     destdir="${test.build.classes}"
+     debug="${javac.debug}"
+     optimize="${javac.optimize}"
+     target="${javac.version}"
+     source="${javac.version}"
+     deprecation="${javac.deprecation}">
+      <compilerarg line="${javac.args} ${javac.args.warnings}" />
+      <classpath refid="test.classpath"/>
+    </javac> 
+    <javac
+     encoding="${build.encoding}"
+     srcdir="${test.src.dir}/testjar"
+     includes="*.java"
+     destdir="${test.build.testjar}"
+     debug="${javac.debug}"
+     optimize="${javac.optimize}"
+     target="${javac.version}"
+     source="${javac.version}"
+     deprecation="${javac.deprecation}">
+      <compilerarg line="${javac.args} ${javac.args.warnings}" />
+      <classpath refid="test.classpath"/>
+    </javac>                                 
+    <delete file="${test.build.testjar}/testjob.jar"/> 
+    <jar jarfile="${test.build.testjar}/testjob.jar"
+     basedir="${test.build.testjar}">
+    </jar>
+    <javac 
+     encoding="${build.encoding}"
+     srcdir="${test.src.dir}/testshell"
+     includes="*.java"
+     destdir="${test.build.testshell}"
+     debug="${javac.debug}"
+     optimize="${javac.optimize}"
+     target="${javac.version}"
+     source="${javac.version}"
+     deprecation="${javac.deprecation}">
+      <compilerarg line="${javac.args} ${javac.args.warnings}"/>
+      <classpath refid="test.classpath"/>
+     </javac>
+     <delete file="${test.build.testshell}/testshell.jar"/>
+     <jar jarfile="${test.build.testshell}/testshell.jar"
+      basedir="${test.build.testshell}">
+     </jar>
+                                                              
+    <delete dir="${test.cache.data}"/>
+    <mkdir dir="${test.cache.data}"/>
+    <delete dir="${test.debug.data}"/>
+    <mkdir dir="${test.debug.data}"/>
+    <copy file="${test.src.dir}/org/apache/hadoop/mapred/testscript.txt" todir="${test.debug.data}"/>
+    <copy file="${test.src.dir}/org/apache/hadoop/mapred/test.txt" todir="${test.cache.data}"/>
+    <copy file="${test.src.dir}/org/apache/hadoop/mapred/test.jar" todir="${test.cache.data}"/>
+    <copy file="${test.src.dir}/org/apache/hadoop/mapred/test.zip" todir="${test.cache.data}"/>
+    <copy file="${test.src.dir}/org/apache/hadoop/mapred/test.tar" todir="${test.cache.data}"/>
+    <copy file="${test.src.dir}/org/apache/hadoop/mapred/test.tgz" todir="${test.cache.data}"/>
+    <copy file="${test.src.dir}/org/apache/hadoop/mapred/test.tar.gz" todir="${test.cache.data}"/>
+    <copy file="${test.src.dir}/org/apache/hadoop/hdfs/hadoop-14-dfs-dir.tgz" todir="${test.cache.data}"/>
+    <copy file="${test.src.dir}/org/apache/hadoop/hdfs/hadoop-1.0-multiblock-file.tgz" todir="${test.cache.data}"/>
+    <copy file="${test.src.dir}/org/apache/hadoop/hdfs/hadoop-dfs-dir.txt" todir="${test.cache.data}"/>
+    <copy file="${test.src.dir}/org/apache/hadoop/cli/testConf.xml" todir="${test.cache.data}"/>
+    <copy file="${test.src.dir}/org/apache/hadoop/cli/clitest_data/data15bytes" todir="${test.cache.data}"/>
+    <copy file="${test.src.dir}/org/apache/hadoop/cli/clitest_data/data30bytes" todir="${test.cache.data}"/>
+    <copy file="${test.src.dir}/org/apache/hadoop/cli/clitest_data/data60bytes" todir="${test.cache.data}"/>
+    <copy file="${test.src.dir}/org/apache/hadoop/cli/clitest_data/data120bytes" todir="${test.cache.data}"/>
+    <copy file="${test.src.dir}/org/apache/hadoop/hdfs/tools/offlineImageViewer/fsimageV18" todir="${test.cache.data}"/>
+    <copy file="${test.src.dir}/org/apache/hadoop/hdfs/tools/offlineImageViewer/fsimageV19" todir="${test.cache.data}"/>
+  </target-->
+
+  <!-- ================================================================== -->
+  <!-- Make test jar                                                      -->
+  <!-- ================================================================== -->
+  <!--target name="jar-test" depends="jar,compile-core-test" description="Make hadoop-test.jar">
+    <jar jarfile="${build.dir}/${test.final.name}.jar"
+         basedir="${test.build.classes}">
+         <manifest>
+           <attribute name="Main-Class"
+                      value="org/apache/hadoop/test/AllTestDriver"/>
+          <section name="org/apache/hadoop">
+            <attribute name="Implementation-Title" value="Hadoop"/>
+            <attribute name="Implementation-Version" value="${version}"/>
+            <attribute name="Implementation-Vendor" value="Apache"/>
+          </section>
+         </manifest>
+    </jar>
+  </target-->
+	
+	
+  <!-- ================================================================== -->
+  <!-- Mobile-Net hadoop execution                                        -->
+  <!-- ================================================================== -->
+	<target name="test" description="test">
+    	<antcall target="executeHadoopCommand">
+        	<param name="command"
+        		value="dfs" />
+    	</antcall>
+	</target>
+	
+	<target name="clean" description="Cleans the HDFS output directory for the project">
+		<delete file="${ant.project.name}.jar" />
+		<antcall target="executeHadoopCommand">
+				<param name="command"
+					value="dfs -rmr ${hdfs_base_dir}/output" />
+		</antcall>
+	</target>
+
+	<target name="jar" description="Creates a jar of the project.">
+		<jar destfile="${ant.project.name}.jar"
+     basedir="bin">
+     <manifest>
+     	<attribute name="Main-Class" value="mobile-net"/>
+     </manifest>
+		</jar>
+	</target>
+    
+	<target name="run" depends="clean,jar" description="Runs the project">
+		<antcall target="executeHadoopCommand">
+			<param name="command"
+				value="jar ${local_base_dir}/${ant.project.name}.jar ${hdfs_base_dir}/input ${hdfs_base_dir}/output" />
+		</antcall>
+	</target>
+	
+	<target name="showOutput" description="Shows the output of the job">
+		<antcall target="executeHadoopCommand">
+			<param name="command"
+				value="dfs -cat ${hdfs_base_dir}/part-r-00000"/>
+		</antcall>
+	</target>
+	
+	<target name="executeHadoopCommand">
+		<sshexec
+			host="${server}"
+			username="${username}"
+			password="${password}"
+			command="hadoop ${command}"
+			failonerror="no"/>
+	</target>
+</project>
