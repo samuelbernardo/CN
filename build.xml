@@ -72,12 +72,14 @@
     <javac 
         encoding="${build.encoding}"
         srcdir="${mapred.src.dir}"
-        includes="org/apache/hadoop/**/*.java"
+        includes="**/*.java"
         destdir="${build.classes}"
         debug="${javac.debug}"
         optimize="${javac.optimize}"
         target="${javac.version}"
-        source="${javac.version}">
+        source="${javac.version}"
+        deprecation="${javac.deprecation}"
+        includeantruntime="false">
       <compilerarg line="${javac.args} ${javac.args.warnings}" />
       <classpath refid="classpath"/>
     </javac>
@@ -110,12 +112,22 @@
     </jar>
   </target>
 	
-	<target name="clean" description="Cleans the HDFS output directory for the project">
+	<target name="clean-jar" description="Cleans generated jar for the project">
 		<delete file="${build.dir}/${final.name}.jar" />
+	</target>
+	
+	<target name="clean-hdfs" description="Cleans the HDFS output directory for the project">
 		<antcall target="executeHadoopCommand">
 				<param name="command"
 					value="dfs -rmr ${hdfs_base_dir}/output" />
 		</antcall>
+	</target>
+	
+	<target name="clean" depends="clean-jar" description="Cleans build directory for the project">
+		<delete dir="${build.dir}" followSymlinks="false" />
+	</target>
+	
+	<target name="clean-all" depends="clean, clean-hdfs" description="Cleans all generated files for the project">
 	</target>
   
   
