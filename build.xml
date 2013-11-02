@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <project name="mobile-net" basedir="." default="run">
+	<!-- shouldn't this property be in build.properties? -rodrigo --> 
 	<property name="server" value="cluster.rnl.ist.utl.pt"/>
 	
   <!-- ====================================================== -->
@@ -13,12 +14,15 @@
   <property name="final.name" value="${name}-${version}"/>
   <property name="test.final.name" value="${name}-test-${version}"/>
 	
-	<property name="src.dir" value="${workspace}/src"/>  	
+  <property name="src.dir" value="${workspace}/src"/>  	
   <property name="prj.src.dir" value="${src.dir}/project"/>
   <property name="mapred.src.dir" value="${prj.src.dir}/mapred"/>
+	
+	<!-- i don't think we're going to use this dir. -rodrigo -->
   <property name="hdfs.src.dir" value="${prj.src.dir}/hdfs"/>
   
-	<property name="hdfs_base_dir" value="/tmp/${username}/${ant.project.name}" />
+	<!-- shouldn't this property be in build.properties? -rodrigo -->
+  <property name="hdfs_base_dir" value="/tmp/${username}/${ant.project.name}" />
   
   <property name="build.dir" value="${basedir}/build"/>
   <property name="conf.dir" value="${basedir}/conf"/>
@@ -31,8 +35,9 @@
   <property name="javac.debug" value="on"/>
   <property name="javac.optimize" value="on"/>
   <property name="javac.deprecation" value="off"/>
-  <property name="javac.version" value="1.6"/>
+  <property name="javac.version" value="1.7"/>
   <property name="javac.args" value=""/>
+	<!-- this is really necessary? -rodrigo -->
   <property name="javac.args.warnings" value="-Xlint:unchecked"/>
   
   <!-- Use environment -->
@@ -58,6 +63,7 @@
 	<target name="init">
     <mkdir dir="${build.dir}"/>
     <mkdir dir="${build.classes}"/>
+		<!-- I think we're not gonna use this dir. -rodrigo -->
     <mkdir dir="${build.src}"/>
   </target>
 
@@ -72,7 +78,7 @@
     <javac 
         encoding="${build.encoding}"
         srcdir="${mapred.src.dir}"
-        includes="org/apache/hadoop/**/*.java"
+        includes="**/*.java"
         destdir="${build.classes}"
         debug="${javac.debug}"
         optimize="${javac.optimize}"
@@ -83,6 +89,7 @@
     </javac>
   </target>
 
+	<!-- This is just an alias, why don't just keep one of them? -rodrigo -->
   <target name="compile"
 					depends="compile-classes"
 					description="Compile all project">
@@ -111,6 +118,7 @@
   </target>
 	
 	<target name="clean" description="Cleans the HDFS output directory for the project">
+		<!-- Shouldn't we erase all .class files also? -rodrigo -->
 		<delete file="${build.dir}/${final.name}.jar" />
 		<antcall target="executeHadoopCommand">
 				<param name="command"

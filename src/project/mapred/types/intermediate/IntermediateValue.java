@@ -13,43 +13,43 @@ import org.apache.hadoop.io.WritableComparable;
  * TODO
  */
 public abstract class IntermediateValue 
-  implements WritableComparable<IntermediateValue> {
-	
-    /**
-     * TODO
-     */
-    protected List<Text> values;
-        
-    /**
-     * Constructor.
-     */
-    public IntermediateValue(List<Text> values) { this.values = values; }
+implements WritableComparable<IntermediateValue> {
 
-    /**
-     * Method that serializes the class fields.
-     * @param out - where fields will be written.
-     */
+	/**
+	 * TODO
+	 */
+	protected List<Text> values;
+
+	/**
+	 * Constructor.
+	 */
+	public IntermediateValue(List<Text> values) { this.values = values; }
+
+	/**
+	 * Method that serializes the class fields.
+	 * @param out - where fields will be written.
+	 */
 	@Override
 	public void write(DataOutput out) throws IOException {
 		Iterator<Text> iterator = this.values.iterator();
 		out.writeInt(this.values.size());
 		while(iterator.hasNext()) { iterator.next().write(out); }
 	}
-	
-    /**
-     * Method that deserializes the class fields.
-     * @param in - where fields will be read from.
-     */
+
+	/**
+	 * Method that deserializes the class fields.
+	 * @param in - where fields will be read from.
+	 */
 	@Override
 	public void readFields(DataInput in) throws IOException {
 		int counter;
 		Text tmp;
 		for(
-		  tmp = new Text(), counter = in.readInt(); 
-		  counter > 0; 
-		  tmp.readFields(in), counter--) { this.values.add(tmp); }
+				tmp = new Text(), counter = in.readInt(); 
+				counter > 0; 
+				tmp.readFields(in), counter--) { this.values.add(tmp); }
 	}
-	
+
 	/**
 	 * Getters
 	 */
@@ -61,7 +61,7 @@ public abstract class IntermediateValue
 	 */
 	@Override
 	public int compareTo(IntermediateValue o) { return 0; }
-	
+
 	/**
 	 * This method merges two IntermediateValues into one. The local object
 	 * stores the resultant merged object.
