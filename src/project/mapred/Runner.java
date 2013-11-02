@@ -19,7 +19,6 @@ import org.apache.hadoop.mapred.TextInputFormat;
 import org.apache.hadoop.mapred.TextOutputFormat;
 
 import project.mapred.types.intermediate.*;
-import project.IntermediateValue;
 
 public class Runner {
 
