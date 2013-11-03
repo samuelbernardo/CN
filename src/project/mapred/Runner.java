@@ -25,6 +25,16 @@ import project.mapred.types.intermediate.*;
  */
 public class Runner {
 
+
+	/**
+	 * Constants. 
+	 * Note: this constants are integer because we need their string
+	 * representation also.
+	 */
+	public static final int VISITED_CELLS = 0;
+	public static final int PRESENT_PHONES = 1;
+	public static final int OFFLINE_TIME = 2;
+
 	/**
 	 * Class defining the map method.
 	 */
@@ -54,9 +64,9 @@ public class Runner {
 		public static final int SECONDS_IN_HOUR = 60*60;
 		public static final int SECONDS_IN_DAY = SECONDS_IN_HOUR*60;
 		public static final int HOURS_IN_DAY = 24;
-		public static final String VISITED_CELLS = "0";
-		public static final String PRESENT_PHONES = "1";
-		public static final String OFFLINE_TIME = "2";
+		public static final String VISITED_CELLS = new String(new Integer(Runner.VISITED_CELLS).toString());
+		public static final String PRESENT_PHONES = new String(new Integer(Runner.PRESENT_PHONES).toString());
+		public static final String OFFLINE_TIME = new String(new Integer(Runner.OFFLINE_TIME).toString());
 
 
 		/**
@@ -90,7 +100,7 @@ public class Runner {
 				list.add(new Text(Map.ZERO));
 				list.add(new Text(Map.YES));
 				list.add(new Text(Map.ZERO));
-				output.collect(new IntermediateKey(OFFLINE_TIME, date, time, phone), new OffIntermediateValue(list));
+				output.collect(new IntermediateKey(OFFLINE_TIME, date, time, phone), new IntermediateValue(list));
 				break;
 			case PHONE_LEAVES_NETWORK:
 				nSecs = this.getNumberSeconds(time);
@@ -98,30 +108,30 @@ public class Runner {
 				list.add(new Text(Map.ZERO));
 				list.add(new Text(Map.NO));
 				list.add(new Text(new Integer(Map.SECONDS_IN_DAY - nSecs).toString()));
-				output.collect(new IntermediateKey(OFFLINE_TIME, date, time, phone), new OffIntermediateValue(list));
+				output.collect(new IntermediateKey(OFFLINE_TIME, date, time, phone), new IntermediateValue(list));
 				break;
 			case PHONE_JOINS_CELL:
 				list.add(new Text(Map.ENTER + phone)); 
-				output.collect(new IntermediateKey(PRESENT_PHONES, date, time, cell+":"+time.substring(0, 2)), new PresentIntermediateValue(list));
+				output.collect(new IntermediateKey(PRESENT_PHONES, date, time, cell+":"+time.substring(0, 2)), new IntermediateValue(list));
 				list = new ArrayList<Text>(); 
 				list.add(new Text(cell));
-				output.collect(new IntermediateKey(VISITED_CELLS, date, time, phone), new CellsIntermediateValue(list));
+				output.collect(new IntermediateKey(VISITED_CELLS, date, time, phone), new IntermediateValue(list));
 				break;
 			case PHONE_LEAVES_CELL:
 				list.add(new Text(Map.LEAVE + phone));
-				output.collect(new IntermediateKey(PRESENT_PHONES, date, time, cell+":"+time.substring(0, 2)), new PresentIntermediateValue(list));
+				output.collect(new IntermediateKey(PRESENT_PHONES, date, time, cell+":"+time.substring(0, 2)), new IntermediateValue(list));
 				break;
 			case PHONE_INIT_CALL:
 			case PHONE_TERM_CALL:
 			case PHONE_PINGS_CELL:
 				list.add(new Text(Map.ENTER + phone));
-				output.collect(new IntermediateKey(PRESENT_PHONES, date, time, cell+":"+time.substring(0, 2)), new PresentIntermediateValue(list));
+				output.collect(new IntermediateKey(PRESENT_PHONES, date, time, cell+":"+time.substring(0, 2)), new IntermediateValue(list));
 				// If the first hour is gone, we don't need this "still alive"
 				// messages. 
 				if (this.getNumberSeconds(time) >= SECONDS_IN_HOUR) {
 					list = new ArrayList<Text>(); 
 					list.add(new Text(cell));
-					output.collect(new IntermediateKey(VISITED_CELLS, date, time, phone), new CellsIntermediateValue(list));
+					output.collect(new IntermediateKey(VISITED_CELLS, date, time, phone), new IntermediateValue(list));
 				}
 				break;
 			}
@@ -158,15 +168,97 @@ public class Runner {
 		 * @throws IOException
 		 */
 		public void reduce(
-				IntermediateKey key, 
+				IntermediateKey k, 
 				Iterator<IntermediateValue> it, 
 				OutputCollector<IntermediateKey, IntermediateValue> output, 
 				Reporter reporter) throws IOException {
-			// TODO: create an interface merger. Create three implementations.
-			// intermediate value will have to visit the implementation we choose.
-			IntermediateValue value = null;
-			for(value = it.next(); it.hasNext(); value.merge(it.next()));
-			output.collect(key, value);
+			IntermediateValue v = null;
+			switch (Integer.parseInt(k.getQuery())) {
+			case VISITED_CELLS:
+				for(v = it.next(); it.hasNext(); reduceVisitedCells(v, it.next()));
+				break;
+			case PRESENT_PHONES:
+				for(v = it.next(); it.hasNext(); reducePresentPhones(v, it.next()));
+				break;
+			case OFFLINE_TIME:
+				for(v = it.next(); it.hasNext(); reduceOfflineTime(v, it.next()));
+				break;
+			}
+			output.collect(k, v);
+		}
+
+		/**
+		 * Auxiliary method that will reduce the VisitedCelss pairs.
+		 * The list will have the following format: <cell1,...,cellN>
+		 * @param iv1
+		 * @param iv2
+		 */
+		private void reduceVisitedCells(IntermediateValue iv1, IntermediateValue iv2) {
+			// WARNING: there could be an issue here. If in the first hour of a day,
+			// the phone leaves the cell before pinging it, we will not record that
+			// the phone was in that cell.
+			// UGLY SOLUTION: see if the disconnection happens within the first 
+			// hour and reproduce a ping.
+			iv1.getValues().addAll(iv2.getValues());
+		}
+
+		/**
+		 * Auxiliary method that will reduce the PresentPhones pairs.
+		 * The list will have the following format: <[+/-]phone1,...,[+/-]phoneN>
+		 * @param iv1
+		 * @param iv2
+		 */
+		private void reducePresentPhones(IntermediateValue iv1, IntermediateValue iv2) {
+			for (Iterator<Text> i = iv2.getValues().iterator(); i.hasNext();) {
+				Text tmp = i.next();
+				// if contains, nothing to do.
+				if (iv1.getValues().contains(tmp)) { continue; }
+				else {
+					// change + to - or - to +
+					tmp.set((""+(tmp.charAt(0) == Map.ENTER ? Map.LEAVE : Map.ENTER)).getBytes(), 0, 2);
+					// if contains the inverse
+					if (iv1.getValues().contains(tmp)) {
+						@SuppressWarnings("unused")
+						boolean b = tmp.charAt(0) == '+' ? iv1.getValues().remove(tmp) : iv1.getValues().add(tmp);
+					}
+				}			
+			}
+		}
+
+		/**
+		 * Auxiliary method that will reduce the OfflineTime pairs.
+		 * The list will have the following format: 
+		 *  <number of seconds since the last event,
+		 *   number of offline seconds before the last event, 
+		 *   if the phone is off the network after the last event,
+		 *   number of expected offline seconds for all the day>
+		 * @param iv1
+		 * @param iv2
+		 */
+		private void reduceOfflineTime(IntermediateValue iv1, IntermediateValue iv2) {
+			Integer total = 0;
+			// get number of offline seconds seen by iv2.
+			int s1 = Integer.parseInt(iv2.getValues().get(1).toString());
+			// get number of offline seconds seen by iv1.
+			int s2 = Integer.parseInt(iv1.getValues().get(1).toString());
+			
+			total += s1+s2;
+			
+			if(iv1.getValues().get(2).equals(Map.NO)) {
+				// get number of seconds of iv2's event.
+				int s3 = Integer.parseInt(iv2.getValues().get(0).toString());
+				// get number of seconds of iv1 event.
+				int s4 = Integer.parseInt(iv1.getValues().get(0).toString());
+				total += s3-s4;
+			}
+			
+			// get the expected number of offline seconds for all the day.
+			int s5 = Integer.parseInt(iv2.getValues().get(3).toString());
+			 
+			iv1.getValues().set(0, iv2.getValues().get(0));
+			iv1.getValues().set(1, new Text(total.toString()));
+			iv1.getValues().set(2, iv2.getValues().get(2));
+			iv1.getValues().set(3, new Text(new Integer(total + s5).toString()));
 		}
 	}
 
@@ -198,7 +290,7 @@ public class Runner {
 		}
 
 	}
-	
+
 	/**
 	 * Class defining how hadoop should group values (before calling reduce).
 	 */
@@ -216,7 +308,7 @@ public class Runner {
 					b2, start2, length2 - IntermediateKey.TIME_SIZE);
 		}
 	}
-	
+
 
 	/**
 	 * Main
@@ -229,7 +321,7 @@ public class Runner {
 
 		conf.setOutputKeyClass(IntermediateKey.class);
 		conf.setOutputValueClass(IntermediateValue.class);
-		
+
 		conf.setOutputKeyComparatorClass(Text.Comparator.class);
 		conf.setOutputValueGroupingComparator(GroupingComparator.class);
 		conf.setPartitionerClass(Partition.class);

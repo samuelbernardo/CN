@@ -12,7 +12,7 @@ import org.apache.hadoop.io.WritableComparable;
 /**
  * Class that represents the intermediate values. 
  */
-public abstract class IntermediateValue 
+public class IntermediateValue 
 implements WritableComparable<IntermediateValue> {
 
 	/**
@@ -60,12 +60,4 @@ implements WritableComparable<IntermediateValue> {
 	 */
 	@Override
 	public int compareTo(IntermediateValue o) { return 0; }
-
-	/**
-	 * This method merges two IntermediateValues into one. The local object
-	 * stores the resultant merged object.
-	 * @param iv 
-	 * @return - the merged object.
-	 */
-	public abstract IntermediateValue merge(IntermediateValue iv);
 }

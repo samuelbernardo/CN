@@ -10,8 +10,8 @@ public class IntermediateKey extends Text {
 
 	public static final String SEPARATOR = ";";
 	public static final int TIME_SIZE = 8;
-	private int eventOff;
-	private int eventLen;
+	private int queryOff;
+	private int queryLen;
 	private int dateOff;
 	private int dateLen;
 	private int timeOff;
@@ -27,9 +27,9 @@ public class IntermediateKey extends Text {
 	 */
 	public IntermediateKey(String event, String date, String time, String id) {
 		super(event + SEPARATOR +date + SEPARATOR + id + SEPARATOR + time);
-		this.eventOff = 0;
-		this.eventLen = event.length();
-		this.dateOff = this.eventOff + this.eventLen + SEPARATOR.length();
+		this.queryOff = 0;
+		this.queryLen = event.length();
+		this.dateOff = this.queryOff + this.queryLen + SEPARATOR.length();
 		this.dateLen = date.length();
 		this.idOff = this.dateOff + this.dateLen + SEPARATOR.length();
 		this.idLen = id.length();
@@ -48,6 +48,6 @@ public class IntermediateKey extends Text {
 	{ return new String(this.getBytes(), this.idOff, this.idLen); }
 	public String getDateId()
 	{ return new String(this.getBytes(), this.dateOff, this.dateLen + SEPARATOR.length() + this.idLen); }
-	public String getEvent()
-	{ return new String(this.getBytes(), this.eventOff, this.eventLen); }
+	public String getQuery()
+	{ return new String(this.getBytes(), this.queryOff, this.queryLen); }
 }
