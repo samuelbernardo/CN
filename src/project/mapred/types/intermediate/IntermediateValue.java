@@ -3,6 +3,7 @@ package project.mapred.types.intermediate;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
@@ -21,9 +22,10 @@ implements WritableComparable<IntermediateValue> {
 	protected List<Text> values;
 
 	/**
-	 * Constructor.
+	 * Constructors.
 	 */
 	public IntermediateValue(List<Text> values) { this.values = values; }
+	public IntermediateValue() { this.values = new ArrayList<Text>();}
 
 	/**
 	 * Method that serializes the class fields.

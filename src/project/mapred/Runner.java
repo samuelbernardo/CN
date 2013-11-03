@@ -173,6 +173,7 @@ public class Runner {
 				OutputCollector<IntermediateKey, IntermediateValue> output, 
 				Reporter reporter) throws IOException {
 			IntermediateValue v = null;
+			System.out.println(k.toString());
 			switch (Integer.parseInt(k.getQuery())) {
 			case VISITED_CELLS:
 				for(v = it.next(); it.hasNext(); reduceVisitedCells(v, it.next()));

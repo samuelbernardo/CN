@@ -1,5 +1,8 @@
 package project.mapred.types.intermediate;
 
+import java.io.DataInput;
+import java.io.IOException;
+
 import org.apache.hadoop.io.Text;
 
 /**
@@ -9,45 +12,49 @@ import org.apache.hadoop.io.Text;
 public class IntermediateKey extends Text {
 
 	public static final String SEPARATOR = ";";
+	public static final int SEPARATOR_SIZE = SEPARATOR.getBytes().length;
 	public static final int TIME_SIZE = 8;
-	private int queryOff;
-	private int queryLen;
-	private int dateOff;
-	private int dateLen;
-	private int timeOff;
-	private int timeLen;
-	private int idOff;
-	private int idLen;
+	private String query;
+	private String date;
+	private String time;
+	private String id;
 
 	/**
-	 * Constructor.
+	 * Constructors.
 	 * Format example: 
-	 * "2:2013-10-09;960123123;17:54:01"
+	 * "2;2013-10-09;960123123;17:54:01"
 	 * "event:date:id:time"
 	 */
-	public IntermediateKey(String event, String date, String time, String id) {
-		super(event + SEPARATOR +date + SEPARATOR + id + SEPARATOR + time);
-		this.queryOff = 0;
-		this.queryLen = event.length();
-		this.dateOff = this.queryOff + this.queryLen + SEPARATOR.length();
-		this.dateLen = date.length();
-		this.idOff = this.dateOff + this.dateLen + SEPARATOR.length();
-		this.idLen = id.length();
-		this.timeOff = this.idOff + this.idLen + SEPARATOR.length();
-		this.timeLen = time.length();
+	public IntermediateKey(String query, String date, String time, String id) {
+		super(query + SEPARATOR +date + SEPARATOR + id + SEPARATOR + time);
+		this.date = date;
+		this.query = query;
+		this.time = time;
+		this.id = id;
 	}
+	public IntermediateKey() {}
 
+	@Override
+	public void readFields(DataInput in) throws IOException {
+		super.readFields(in);
+		String[] key = this.toString().split(SEPARATOR);
+		this.query = key[0];
+		this.date = key[1];
+		this.id = key[2];
+		this.time = key[3];
+	}
+	
 	/**
 	 * Getters.
 	 */
 	public String getDate() 
-	{ return new String(this.getBytes(), this.dateOff, this.dateLen); }
+	{ return this.date; }
 	public String getTime() 
-	{ return new String(this.getBytes(), this.timeOff, this.timeLen); }
+	{ return this.time; }
 	public String getId() 
-	{ return new String(this.getBytes(), this.idOff, this.idLen); }
+	{ return this.id; }
 	public String getDateId()
-	{ return new String(this.getBytes(), this.dateOff, this.dateLen + SEPARATOR.length() + this.idLen); }
+	{ return new String(this.getDate()+";"+this.getId()); }
 	public String getQuery()
-	{ return new String(this.getBytes(), this.queryOff, this.queryLen); }
+	{ return this.query; }
 }

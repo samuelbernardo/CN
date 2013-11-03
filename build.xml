@@ -159,7 +159,7 @@
 	<target name="showOutput" description="Shows the output of the job">
 		<antcall target="executeHadoopCommand">
 			<param name="command"
-				value="dfs -cat ${hdfs_base_dir}/part-r-00000"/>
+				value="dfs -cat ${hdfs_base_dir}/output/*"/>
 		</antcall>
 	</target>
 	
