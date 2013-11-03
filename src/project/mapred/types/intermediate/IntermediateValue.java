@@ -10,13 +10,13 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparable;
 
 /**
- * TODO
+ * Class that represents the intermediate values. 
  */
 public abstract class IntermediateValue 
 implements WritableComparable<IntermediateValue> {
 
 	/**
-	 * TODO
+	 * This is where all the values are stored.
 	 */
 	protected List<Text> values;
 
@@ -44,10 +44,9 @@ implements WritableComparable<IntermediateValue> {
 	public void readFields(DataInput in) throws IOException {
 		int counter;
 		Text tmp;
-		for(
-				tmp = new Text(), counter = in.readInt(); 
-				counter > 0; 
-				tmp.readFields(in), counter--) { this.values.add(tmp); }
+		for(tmp = new Text(), counter = in.readInt(); 
+			counter > 0; 
+			tmp.readFields(in), counter--, this.values.add(tmp));
 	}
 
 	/**

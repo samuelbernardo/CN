@@ -11,6 +11,7 @@
   <property name="name" value="mobile-net"/>
   <property name="final.name" value="${name}-${version}"/>
   <property name="test.final.name" value="${name}-test-${version}"/>
+	<property name="main-class" value="project.mapred.Runner" />
 	
   <property name="src.dir" value="${workspace}/src"/>  	
   <property name="prj.src.dir" value="${src.dir}/project"/>
@@ -18,7 +19,7 @@
 	
 	<!-- shouldn't this property be in build.properties? -rodrigo -->
 	<!-- since it depends on username and the rest must be like that I don't see that need. - Samuel -->
-  <property name="hdfs_base_dir" value="/tmp/${username}/${ant.project.name}" />
+  <property name="hdfs_base_dir" value="/user/${username}/${ant.project.name}" />
   
   <property name="build.dir" value="${basedir}/build"/>
   <property name="conf.dir" value="${basedir}/conf"/>
@@ -58,8 +59,6 @@
 	<target name="init">
     <mkdir dir="${build.dir}"/>
     <mkdir dir="${build.classes}"/>
-		<!-- I think we're not gonna use this dir. -rodrigo -->
-    <mkdir dir="${build.src}"/>
   </target>
 
   <!--import file="${test.src.dir}/additional_confs.xml"/-->
@@ -68,7 +67,7 @@
   <!-- Compile the Java files                                 -->
   <!-- ====================================================== -->
   
-  <target name="compile-classes" depends="init" description="compile mobile-net classes">
+  <target name="compile" depends="init" description="compile mobile-net classes">
     <!-- Compile Java files checking warnings -->
     <javac 
         encoding="${build.encoding}"
@@ -85,13 +84,6 @@
       <classpath refid="classpath"/>
     </javac>
   </target>
-
-	<!-- This is just an alias, why don't just keep one of them? -rodrigo -->
-  <target name="compile"
-					depends="compile-classes"
-					description="Compile all project">
-  </target>
-  
 
   <!-- ================================================================== -->
   <!-- Make jar                                                           -->
@@ -126,11 +118,13 @@
 	</target>
 	
 	<target name="clean" depends="clean-jar" description="Cleans build directory for the project">
-		<delete dir="${build.dir}" followSymlinks="false" />
+		<delete dir="${build.classes}" includeEmptyDirs="true" followSymlinks="false" />
+		<!-- I added the includeEmptyDirs so that we don't need to use execs here.
+		     I also changed the dir to build.classes because the previous one was also deleting the jar. -rodrigo
 		<exec executable="rm" outputproperty="os-name">
 			<arg value="-r" />
 			<arg value="${build.dir}" />
-		</exec>
+		</exec>-->
 	</target>
 	
 	<target name="clean-all" depends="clean, clean-hdfs" description="Cleans all generated files for the project">
@@ -148,15 +142,17 @@
   <!-- ================================================================== -->
 	<target name="test" description="test">
     	<antcall target="executeHadoopCommand">
-        	<param name="command"
-        		value="dfs" />
+        	<param name="command" value="" />
     	</antcall>
 	</target>
     
 	<target name="run" depends="clean,jar" description="Runs the project">
+		<scp 
+			file="${build.dir}/${final.name}.jar" 
+			todir="${username}:${password}@${server}:~/"/>
 		<antcall target="executeHadoopCommand">
 			<param name="command"
-				value="jar ${build.dir}/${final.name}.jar ${hdfs_base_dir}/input ${hdfs_base_dir}/output" />
+				value="jar ~/${final.name}.jar ${hdfs_base_dir}/input ${hdfs_base_dir}/output" />
 		</antcall>
 	</target>
 	
@@ -172,7 +168,7 @@
 			host="${server}"
 			username="${username}"
 			password="${password}"
-			command="hadoop ${command}"
+			command="/opt/hadoop/bin/hadoop ${command}"
 			failonerror="no"/>
 	</target>
 </project>

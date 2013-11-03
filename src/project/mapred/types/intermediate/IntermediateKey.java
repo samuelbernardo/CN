@@ -3,33 +3,43 @@ package project.mapred.types.intermediate;
 import org.apache.hadoop.io.Text;
 
 /**
- * 
+ * Class representing the intermediate key.
+ * This is a generic key that shall be used by all intermediate pairs.
  */
 public class IntermediateKey extends Text {
 
 	public static final String SEPARATOR = ";";
-	public static final int DATE_BEG = 0;
-	public static final int DATE_END = 9;
-	public static final int TIME_BEG = 11;
-	public static final int TIME_END = 18;
-	public static final int ID_BEG = 20;
+	public static final int TIME_SIZE = 8;
+	public int dateBeg;
+	public int dateEnd;
+	public int timeBeg;
+	public int timeEnd;
+	public int idBeg;
+	public int idEnd;
 
 	/**
 	 * Constructor.
+	 * Format example: "2013-10-09;960123123;17:54.01"
 	 */
 	public IntermediateKey(String date, String time, String id) {
-		super(date + SEPARATOR + time + SEPARATOR + id);
+		super(date + SEPARATOR + id + SEPARATOR + time);
+		this.dateBeg = 0;
+		this.dateEnd = 9;
+		this.idBeg = 11;
+		this.idEnd = this.idBeg + id.length();
+		this.timeBeg = this.idEnd + 2;
+		this.timeEnd = this.timeBeg + 7;
 	}
 
 	/**
 	 * Getters.
 	 */
 	public String getDate() 
-	{ return this.toString().substring(DATE_BEG, DATE_END+1); }
+	{ return new String(this.getBytes(), this.dateBeg, this.dateEnd - this.dateBeg); }
 	public String getTime() 
-	{return this.toString().substring(TIME_BEG, TIME_END+1); }
+	{ return new String(this.getBytes(), this.timeBeg, this.timeEnd - this.timeBeg); }
 	public String getId() 
-	{ return this.toString().substring(ID_BEG); }
+	{ return new String(this.getBytes(), this.idBeg, this.idEnd - this.idBeg); }
 	public String getDateId()
-	{ return this.toString().substring(DATE_BEG, TIME_END+1); }
+	{ return new String(this.getBytes(), this.dateBeg, this.idEnd - this.dateBeg); }
 }

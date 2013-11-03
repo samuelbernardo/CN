@@ -20,17 +20,20 @@ import org.apache.hadoop.mapred.TextOutputFormat;
 
 import project.mapred.types.intermediate.*;
 
+/**
+ * Class that holds the implementation of the Map, Reduce and auxiliary classes.
+ */
 public class Runner {
 
 	/**
-	 * TODO
+	 * Class defining the map method.
 	 */
 	public static class Map 
 	extends MapReduceBase 
 	implements Mapper<LongWritable, Text, IntermediateKey, IntermediateValue> {
 
 		/**
-		 * Events to process
+		 * Possible events.
 		 */
 		public static final int PHONE_JOINS_NETWORK = 4; 
 		public static final int PHONE_LEAVES_NETWORK = 5; 
@@ -41,7 +44,7 @@ public class Runner {
 		public static final int PHONE_PINGS_CELL = 8;
 
 		/**
-		 * Constants used for values.
+		 * Constants.
 		 */
 		public static final String YES = "Y";
 		public static final String NO = "N";
@@ -54,11 +57,11 @@ public class Runner {
 
 
 		/**
-		 * TODO
-		 * @param key
-		 * @param value
-		 * @param output
-		 * @param reporter
+		 * Map implementation.
+		 * @param key - by default, the input file cursor. 
+		 * @param value - by default, a complete line from the input file.
+		 * @param output - the collector.
+		 * @param reporter - could be used to report progress (not in use).
 		 * @throws IOException
 		 */
 		public void map(
@@ -67,81 +70,66 @@ public class Runner {
 				OutputCollector<IntermediateKey, IntermediateValue> output, 
 				Reporter reporter) throws IOException {
 
-			String[] line = value.toString().split(", ");
+			String[] line = value.toString().trim().split(", ");
+			String 	cell = line[0], 
+					date = line[1], 
+					time = line[2],
+					event = line[3], 
+					phone = line[4];
 			List<Text> list = new ArrayList<Text>();
-			IntermediateValue iv;
+			IntermediateValue iv = null;
+			int nSecs = -1;
 
-			switch (Integer.parseInt(line[3])) {
+			switch (Integer.parseInt(event)) {
 			case PHONE_JOINS_NETWORK:
-				list.add(new Text(new Integer(
-						this.getNumberSeconds(line[2])).toString()));
+				nSecs = this.getNumberSeconds(time);
+				list.add(new Text(new Integer(nSecs).toString()));
 				list.add(new Text(Map.ZERO));
 				list.add(new Text(Map.YES));
 				list.add(new Text(Map.ZERO));
-				iv = new OffIntermediateValue(list);
-				this.collect(output, line[1], line[2], line[4], iv);
+				output.collect(new IntermediateKey(date, time, phone), new OffIntermediateValue(list));
 				break;
-			case PHONE_LEAVES_NETWORK: 
-				list.add(new Text(new Integer(
-						this.getNumberSeconds(line[2])).toString()));
+			case PHONE_LEAVES_NETWORK:
+				nSecs = this.getNumberSeconds(time);
+				list.add(new Text(new Integer(nSecs).toString()));
 				list.add(new Text(Map.ZERO));
 				list.add(new Text(Map.NO));
-				list.add(new Text(new Integer(
-						Map.SECONDS_IN_DAY - this.getNumberSeconds(line[2])).toString()));
-				iv = new OffIntermediateValue(list);
-				this.collect(output, line[1], line[2], line[4], iv); 	    	   
+				list.add(new Text(new Integer(Map.SECONDS_IN_DAY - nSecs).toString()));
+				output.collect(new IntermediateKey(date, time, phone), new OffIntermediateValue(list));
 				break;
 			case PHONE_JOINS_CELL:
-				list.add(new Text(Map.ENTER + line[4])); 
+				list.add(new Text(Map.ENTER + phone)); 
 				iv = new PresentIntermediateValue(list);
-				this.collect(output, line[1], line[2], line[0]+line[2].substring(0, 2), iv);
+				output.collect(new IntermediateKey(date, time, cell+":"+time.substring(0, 2)), iv);
 				list = new ArrayList<Text>(); 
-				list.add(new Text(line[0]));
-				iv = new CellsIntermediateValue(list);
-				this.collect(output, line[1], line[2], line[4], iv);
+				list.add(new Text(cell));
+				output.collect(new IntermediateKey(date, time, phone), new CellsIntermediateValue(list));
 				break;
 			case PHONE_LEAVES_CELL:
-				list.add(new Text(Map.LEAVE + line[4]));
-				iv = new PresentIntermediateValue(list);
-				this.collect(output, line[1], line[2], line[0]+line[2].substring(0, 2), iv);
+				list.add(new Text(Map.LEAVE + phone));
+				output.collect(new IntermediateKey(date, time, cell+":"+time.substring(0, 2)), new PresentIntermediateValue(list));
 				break;
 			case PHONE_INIT_CALL:
 			case PHONE_TERM_CALL:
 			case PHONE_PINGS_CELL:
-				list.add(new Text(Map.ENTER + line[4]));
-				iv = new PresentIntermediateValue(list);
-				this.collect(output, line[1], line[2], line[0]+line[2].substring(0, 2), iv);
+				list.add(new Text(Map.ENTER + phone));
+				output.collect(new IntermediateKey(date, time, cell+":"+time.substring(0, 2)), new PresentIntermediateValue(list));
 				// If the first hour is gone, we don't need this "still alive"
 				// messages. 
-				if (this.getNumberSeconds(line[2]) >= SECONDS_IN_HOUR) {
+				if (this.getNumberSeconds(time) >= SECONDS_IN_HOUR) {
 					list = new ArrayList<Text>(); 
-					list.add(new Text(line[0]));
-					iv = new CellsIntermediateValue(list);
-					this.collect(output, line[1], line[2], line[4], iv);
+					list.add(new Text(cell));
+					output.collect(new IntermediateKey(date, time, phone), new CellsIntermediateValue(list));
 				}
 				break;
 			}
 		}
 
 		/**
-		 * TODO
-		 * @param time
-		 * @return
-		 * @throws IOException 
-		 */
-		public void collect(
-				OutputCollector<IntermediateKey, IntermediateValue> output, 
-				String date, 
-				String time, 
-				String id, 
-				IntermediateValue value) throws IOException {
-			output.collect(new IntermediateKey(date, time, id), value);
-		}
-
-		/**
-		 * TODO
-		 * @param time
-		 * @return
+		 * Auxiliary method that will convert a string representing time in the
+		 * number of seconds since 0h0m0s.
+		 * @param time - string like 17:54.01
+		 * @return - number of seconds.
 		 */
 		public int getNumberSeconds(String time) {
 			Integer hours = Integer.parseInt(time.substring(0,2));
@@ -153,14 +141,19 @@ public class Runner {
 	}
 
 	/**
-	 * TODO
+	 * Class defining the reduce method.
 	 */
 	public static class Reduce 
 	extends MapReduceBase 
 	implements Reducer<IntermediateKey, IntermediateValue, IntermediateKey, IntermediateValue> {
 
 		/**
-		 * TODO
+		 * Reduce implementation.
+		 * @param key - the key for the given values.
+		 * @param it - values' iterator.
+		 * @param output - the collector.
+		 * @param reporter - could be used to report progress (not in use).
+		 * @throws IOException
 		 */
 		public void reduce(
 				IntermediateKey key, 
@@ -168,20 +161,33 @@ public class Runner {
 				OutputCollector<IntermediateKey, IntermediateValue> output, 
 				Reporter reporter) throws IOException {
 			// FIXME: offintermediate and cells will colide
-			IntermediateValue value = it.next();
-			while(it.hasNext()) { value.merge(it.next()); }
+			IntermediateValue value = null;
+			for(value = it.next(); it.hasNext(); value.merge(it.next()));
+			output.collect(key, value);
 		}
 	}
 
 	/**
-	 * TODO
+	 * Class defining how hadoop should partition keys.
 	 */
-	public static final class Partition 
+	public static final class Partition
 	implements Partitioner<IntermediateKey, IntermediateValue> {
 
+		/**
+		 * Not necessary.
+		 */
 		@Override
 		public void configure(JobConf arg0) {}
 
+		/**
+		 * Method that performs the partition. 
+		 * Note: this method indicates that partitions should be made by
+		 * date and id. The hashCode procedure is the default behavior done by
+		 * hadoop.
+		 * @param k - the key for the given value.
+		 * @param v - the value for the given key.
+		 * @param numReduceTasks - the name tells everything. 
+		 */
 		@Override
 		public int getPartition(
 				IntermediateKey k, IntermediateValue v, int numReduceTasks) {
@@ -191,49 +197,39 @@ public class Runner {
 	}
 	
 	/**
-	 * TODO
-	 *
+	 * Class defining how hadoop should group values (before calling reduce).
 	 */
-	public static final class GroupingComparator implements RawComparator<IntermediateKey> {
+	public static final class GroupingComparator extends Text.Comparator {
 
+		/**
+		 * Nice and efficient way to reuse functionality.
+		 */
 		@Override
 		public int compare(
-				byte[] k1, int start1, int length1, byte[] k2,int start2, int length2) {
-			byte[] b1 = {k1[start1+IntermediateKey.DATE_BEG], k1[start1+IntermediateKey.TIME_END]};
-			return new Text(b1).compareTo(k2, start2, IntermediateKey.TIME_END);
-		}
-
-		@Override
-		public int compare(IntermediateKey k1, IntermediateKey k2) {
-			return this.compare(k1.getBytes(), 0, k1.getLength(), k2.getBytes(), 0, k2.getLength());
+				byte[] b1, int start1, int length1, 
+				byte[] b2, int start2, int length2) {
+			return super.compare(
+					b1, start1, length1 - IntermediateKey.TIME_SIZE, 
+					b2, start2, length2 - IntermediateKey.TIME_SIZE);
 		}
 	}
 	
-	/**
-	 * 
-	 *
-	 */
-	public static final class KeyComparator implements RawComparator<IntermediateKey>{
-		
-		@Override
-		public int compare(
-				byte[] k1, int start1, int length1, byte[] k2,int start2, int length2) {
-			byte[] b1 = {k1[start1], k1[length1-1]};
-			return new Text(b1).compareTo(k2, start2, length2);
-		}
-		
-		@Override
-		public int compare(IntermediateKey k1, IntermediateKey k2) {
-			return k1.compareTo(k2);
-		}
-	}
 
+	/**
+	 * Main
+	 * @param args
+	 * @throws Exception
+	 */
 	public static void main(String[] args) throws Exception {
 		JobConf conf = new JobConf(Runner.class);
-		conf.setJobName("wordcount");
+		conf.setJobName("mobile-net");
 
 		conf.setOutputKeyClass(Text.class);
 		conf.setOutputValueClass(IntWritable.class);
+		
+		conf.setOutputKeyComparatorClass(Text.Comparator.class);
+		conf.setOutputValueGroupingComparator(GroupingComparator.class);
+		conf.setPartitionerClass(Partition.class);
 
 		conf.setMapperClass(Map.class);
 		conf.setCombinerClass(Reduce.class);
