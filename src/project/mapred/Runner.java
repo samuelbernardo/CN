@@ -54,6 +54,9 @@ public class Runner {
 		public static final int SECONDS_IN_HOUR = 60*60;
 		public static final int SECONDS_IN_DAY = SECONDS_IN_HOUR*60;
 		public static final int HOURS_IN_DAY = 24;
+		public static final String VISITED_CELLS = "0";
+		public static final String PRESENT_PHONES = "1";
+		public static final String OFFLINE_TIME = "2";
 
 
 		/**
@@ -70,14 +73,14 @@ public class Runner {
 				OutputCollector<IntermediateKey, IntermediateValue> output, 
 				Reporter reporter) throws IOException {
 
-			String[] line = value.toString().trim().split(", ");
+			String[] line = value.toString().trim().split(",");
+			System.out.println(line[3]);
 			String 	cell = line[0], 
 					date = line[1], 
 					time = line[2],
 					event = line[3], 
-					phone = line[4];
+					phone = event.equals("0") ? null : line[4];
 			List<Text> list = new ArrayList<Text>();
-			IntermediateValue iv = null;
 			int nSecs = -1;
 
 			switch (Integer.parseInt(event)) {
@@ -87,7 +90,7 @@ public class Runner {
 				list.add(new Text(Map.ZERO));
 				list.add(new Text(Map.YES));
 				list.add(new Text(Map.ZERO));
-				output.collect(new IntermediateKey(date, time, phone), new OffIntermediateValue(list));
+				output.collect(new IntermediateKey(OFFLINE_TIME, date, time, phone), new OffIntermediateValue(list));
 				break;
 			case PHONE_LEAVES_NETWORK:
 				nSecs = this.getNumberSeconds(time);
@@ -95,31 +98,30 @@ public class Runner {
 				list.add(new Text(Map.ZERO));
 				list.add(new Text(Map.NO));
 				list.add(new Text(new Integer(Map.SECONDS_IN_DAY - nSecs).toString()));
-				output.collect(new IntermediateKey(date, time, phone), new OffIntermediateValue(list));
+				output.collect(new IntermediateKey(OFFLINE_TIME, date, time, phone), new OffIntermediateValue(list));
 				break;
 			case PHONE_JOINS_CELL:
 				list.add(new Text(Map.ENTER + phone)); 
-				iv = new PresentIntermediateValue(list);
-				output.collect(new IntermediateKey(date, time, cell+":"+time.substring(0, 2)), iv);
+				output.collect(new IntermediateKey(PRESENT_PHONES, date, time, cell+":"+time.substring(0, 2)), new PresentIntermediateValue(list));
 				list = new ArrayList<Text>(); 
 				list.add(new Text(cell));
-				output.collect(new IntermediateKey(date, time, phone), new CellsIntermediateValue(list));
+				output.collect(new IntermediateKey(VISITED_CELLS, date, time, phone), new CellsIntermediateValue(list));
 				break;
 			case PHONE_LEAVES_CELL:
 				list.add(new Text(Map.LEAVE + phone));
-				output.collect(new IntermediateKey(date, time, cell+":"+time.substring(0, 2)), new PresentIntermediateValue(list));
+				output.collect(new IntermediateKey(PRESENT_PHONES, date, time, cell+":"+time.substring(0, 2)), new PresentIntermediateValue(list));
 				break;
 			case PHONE_INIT_CALL:
 			case PHONE_TERM_CALL:
 			case PHONE_PINGS_CELL:
 				list.add(new Text(Map.ENTER + phone));
-				output.collect(new IntermediateKey(date, time, cell+":"+time.substring(0, 2)), new PresentIntermediateValue(list));
+				output.collect(new IntermediateKey(PRESENT_PHONES, date, time, cell+":"+time.substring(0, 2)), new PresentIntermediateValue(list));
 				// If the first hour is gone, we don't need this "still alive"
 				// messages. 
 				if (this.getNumberSeconds(time) >= SECONDS_IN_HOUR) {
 					list = new ArrayList<Text>(); 
 					list.add(new Text(cell));
-					output.collect(new IntermediateKey(date, time, phone), new CellsIntermediateValue(list));
+					output.collect(new IntermediateKey(VISITED_CELLS, date, time, phone), new CellsIntermediateValue(list));
 				}
 				break;
 			}
@@ -133,8 +135,8 @@ public class Runner {
 		 */
 		public int getNumberSeconds(String time) {
 			Integer hours = Integer.parseInt(time.substring(0,2));
-			Integer mins = Integer.parseInt(time.substring(2,4));
-			Integer secs = Integer.parseInt(time.substring(4,6));
+			Integer mins = Integer.parseInt(time.substring(3,5));
+			Integer secs = Integer.parseInt(time.substring(6,8));
 			secs += (hours*60 + mins)*60;
 			return secs;
 		}
@@ -160,7 +162,8 @@ public class Runner {
 				Iterator<IntermediateValue> it, 
 				OutputCollector<IntermediateKey, IntermediateValue> output, 
 				Reporter reporter) throws IOException {
-			// FIXME: offintermediate and cells will colide
+			// TODO: create an interface merger. Create three implementations.
+			// intermediate value will have to visit the implementation we choose.
 			IntermediateValue value = null;
 			for(value = it.next(); it.hasNext(); value.merge(it.next()));
 			output.collect(key, value);
@@ -224,8 +227,8 @@ public class Runner {
 		JobConf conf = new JobConf(Runner.class);
 		conf.setJobName("mobile-net");
 
-		conf.setOutputKeyClass(Text.class);
-		conf.setOutputValueClass(IntWritable.class);
+		conf.setOutputKeyClass(IntermediateKey.class);
+		conf.setOutputValueClass(IntermediateValue.class);
 		
 		conf.setOutputKeyComparatorClass(Text.Comparator.class);
 		conf.setOutputValueGroupingComparator(GroupingComparator.class);

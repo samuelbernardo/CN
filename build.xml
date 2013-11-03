@@ -146,7 +146,7 @@
     	</antcall>
 	</target>
     
-	<target name="run" depends="clean,jar" description="Runs the project">
+	<target name="run" depends="clean-all,jar" description="Runs the project">
 		<scp 
 			file="${build.dir}/${final.name}.jar" 
 			todir="${username}:${password}@${server}:~/"/>
