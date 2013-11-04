@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <project name="mobile-net" basedir="." default="run">
+
+  <property environment="env"/>
 	
   <!-- ====================================================== -->
   <!-- Load all the default properties, and any the user wants-->
