@@ -33,7 +33,22 @@ public class IntermediateKey extends Text {
 		this.id = id;
 	}
 	public IntermediateKey() {}
-
+	/**
+	 * NOTE: Temporary constructor. May be cleaned later. 
+	 */
+	public IntermediateKey(String k) { 
+		super(k);
+		String[] key = this.toString().split(SEPARATOR);
+		this.query = key[0];
+		this.date = key[1];
+		this.id = key[2];
+		this.time = key[3];
+	}
+	
+	/**
+	 * Method that deserializes the class fields.
+	 * @param in - where fields will be read from.
+	 */
 	@Override
 	public void readFields(DataInput in) throws IOException {
 		super.readFields(in);
@@ -47,14 +62,9 @@ public class IntermediateKey extends Text {
 	/**
 	 * Getters.
 	 */
-	public String getDate() 
-	{ return this.date; }
-	public String getTime() 
-	{ return this.time; }
-	public String getId() 
-	{ return this.id; }
-	public String getDateId()
-	{ return new String(this.getDate()+";"+this.getId()); }
-	public String getQuery()
-	{ return this.query; }
+	public String getDate() { return this.date; }
+	public String getTime() { return this.time; }
+	public String getId() 	{ return this.id; }
+	public String getDateId() { return new String(this.getDate()+";"+this.getId()); }
+	public String getQuery() { return this.query; }
 }

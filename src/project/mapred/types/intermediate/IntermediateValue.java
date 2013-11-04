@@ -4,14 +4,15 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparable;
 
 /**
- * Class that represents the intermediate values. 
+ * Class that represents the intermediate values.
+ * NOTE: it seems that hadoop doen't instantiate multiple objects when calling 
+ * reduce. Therefore, the readFields must do all the initialization. 
  */
 public class IntermediateValue 
 implements WritableComparable<IntermediateValue> {
@@ -19,24 +20,23 @@ implements WritableComparable<IntermediateValue> {
 	/**
 	 * This is where all the values are stored.
 	 */
-	protected List<Text> values;
+	protected List<Text> values = null;
+	
+	public static final String SEPARATOR = ", ";
 
 	/**
 	 * Constructors.
 	 */
 	public IntermediateValue(List<Text> values) { this.values = values; }
-	public IntermediateValue() { this.values = new ArrayList<Text>();}
+	public IntermediateValue() {}
 
 	/**
 	 * Method that serializes the class fields.
 	 * @param out - where fields will be written.
 	 */
 	@Override
-	public void write(DataOutput out) throws IOException {
-		Iterator<Text> iterator = this.values.iterator();
-		out.writeInt(this.values.size());
-		while(iterator.hasNext()) { iterator.next().write(out); }
-	}
+	public void write(DataOutput out) throws IOException 
+	{ Text.writeString(out, this.toString()); }
 
 	/**
 	 * Method that deserializes the class fields.
@@ -44,11 +44,12 @@ implements WritableComparable<IntermediateValue> {
 	 */
 	@Override
 	public void readFields(DataInput in) throws IOException {
-		int counter;
-		Text tmp;
-		for(tmp = new Text(), counter = in.readInt(); 
-			counter > 0; 
-			tmp.readFields(in), counter--, this.values.add(tmp));
+		String serialize = Text.readString(in);
+		String[] values = serialize.trim().split(SEPARATOR);
+		int counter = 0;
+		this.values = new ArrayList<Text>();
+		for(; counter < values.length; counter++)
+		{ this.values.add(new Text(values[counter])); }
 	}
 
 	/**
@@ -61,5 +62,18 @@ implements WritableComparable<IntermediateValue> {
 	 * @return always 0 (we are not sorting values).
 	 */
 	@Override
-	public int compareTo(IntermediateValue o) { return 0; }
+	public int compareTo(IntermediateValue o) 
+	{ return this.toString().compareTo(o.toString()); }
+	
+	/**
+	 * toString implementation.
+	 * It cuts off the '[' and ']' given by the ArrayList toString.
+	 * @return
+	 */
+	@Override
+	public String toString() {
+		String output = this.values.toString();
+		int len = output.length();
+		return output.substring(1, len-1); 
+	}
 }

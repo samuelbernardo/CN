@@ -84,7 +84,6 @@ public class Runner {
 				Reporter reporter) throws IOException {
 
 			String[] line = value.toString().trim().split(",");
-			System.out.println(line[3]);
 			String 	cell = line[0], 
 					date = line[1], 
 					time = line[2],
@@ -95,14 +94,16 @@ public class Runner {
 
 			switch (Integer.parseInt(event)) {
 			case PHONE_JOINS_NETWORK:
+				System.out.println("PHONE_JOINS_NETWORK");
 				nSecs = this.getNumberSeconds(time);
 				list.add(new Text(new Integer(nSecs).toString()));
 				list.add(new Text(Map.ZERO));
 				list.add(new Text(Map.YES));
 				list.add(new Text(Map.ZERO));
-				output.collect(new IntermediateKey(OFFLINE_TIME, date, time, phone), new IntermediateValue(list));
+				output.collect(new IntermediateKey(OFFLINE_TIME, date, time, phone),new IntermediateValue(list));
 				break;
 			case PHONE_LEAVES_NETWORK:
+				System.out.println("PHONE_LEAVES_NETWORK");
 				nSecs = this.getNumberSeconds(time);
 				list.add(new Text(new Integer(nSecs).toString()));
 				list.add(new Text(Map.ZERO));
@@ -111,6 +112,7 @@ public class Runner {
 				output.collect(new IntermediateKey(OFFLINE_TIME, date, time, phone), new IntermediateValue(list));
 				break;
 			case PHONE_JOINS_CELL:
+				System.out.println("PHONE_JOINS_CELL");
 				list.add(new Text(Map.ENTER + phone)); 
 				output.collect(new IntermediateKey(PRESENT_PHONES, date, time, cell+":"+time.substring(0, 2)), new IntermediateValue(list));
 				list = new ArrayList<Text>(); 
@@ -118,17 +120,21 @@ public class Runner {
 				output.collect(new IntermediateKey(VISITED_CELLS, date, time, phone), new IntermediateValue(list));
 				break;
 			case PHONE_LEAVES_CELL:
+				System.out.println("PHONE_LEAVES_CELL");
 				list.add(new Text(Map.LEAVE + phone));
 				output.collect(new IntermediateKey(PRESENT_PHONES, date, time, cell+":"+time.substring(0, 2)), new IntermediateValue(list));
 				break;
 			case PHONE_INIT_CALL:
+				System.out.println("PHONE_INIT_CALL");
 			case PHONE_TERM_CALL:
+				System.out.println("PHONE_TERM_CALL");
 			case PHONE_PINGS_CELL:
+				System.out.println("PHONE_PINGS_CELL");
 				list.add(new Text(Map.ENTER + phone));
 				output.collect(new IntermediateKey(PRESENT_PHONES, date, time, cell+":"+time.substring(0, 2)), new IntermediateValue(list));
 				// If the first hour is gone, we don't need this "still alive"
 				// messages. 
-				if (this.getNumberSeconds(time) >= SECONDS_IN_HOUR) {
+				if (this.getNumberSeconds(time) <= SECONDS_IN_HOUR) {
 					list = new ArrayList<Text>(); 
 					list.add(new Text(cell));
 					output.collect(new IntermediateKey(VISITED_CELLS, date, time, phone), new IntermediateValue(list));
@@ -173,7 +179,6 @@ public class Runner {
 				OutputCollector<IntermediateKey, IntermediateValue> output, 
 				Reporter reporter) throws IOException {
 			IntermediateValue v = null;
-			System.out.println(k.toString());
 			switch (Integer.parseInt(k.getQuery())) {
 			case VISITED_CELLS:
 				for(v = it.next(); it.hasNext(); reduceVisitedCells(v, it.next()));
@@ -185,6 +190,7 @@ public class Runner {
 				for(v = it.next(); it.hasNext(); reduceOfflineTime(v, it.next()));
 				break;
 			}
+			System.out.println(k + "->" + v);
 			output.collect(k, v);
 		}
 
@@ -195,6 +201,7 @@ public class Runner {
 		 * @param iv2
 		 */
 		private void reduceVisitedCells(IntermediateValue iv1, IntermediateValue iv2) {
+			System.out.println("reduceVisitedCells!");
 			// WARNING: there could be an issue here. If in the first hour of a day,
 			// the phone leaves the cell before pinging it, we will not record that
 			// the phone was in that cell.
@@ -210,6 +217,7 @@ public class Runner {
 		 * @param iv2
 		 */
 		private void reducePresentPhones(IntermediateValue iv1, IntermediateValue iv2) {
+			System.out.println("reducePresentPhones!");
 			for (Iterator<Text> i = iv2.getValues().iterator(); i.hasNext();) {
 				Text tmp = i.next();
 				// if contains, nothing to do.
@@ -237,6 +245,7 @@ public class Runner {
 		 * @param iv2
 		 */
 		private void reduceOfflineTime(IntermediateValue iv1, IntermediateValue iv2) {
+			System.out.println("reduceOfflineTime!");
 			Integer total = 0;
 			// get number of offline seconds seen by iv2.
 			int s1 = Integer.parseInt(iv2.getValues().get(1).toString());
@@ -295,18 +304,50 @@ public class Runner {
 	/**
 	 * Class defining how hadoop should group values (before calling reduce).
 	 */
-	public static final class GroupingComparator extends Text.Comparator {
-
+	public static final class GroupingComparator implements RawComparator<IntermediateKey> {
+	
 		/**
-		 * Nice and efficient way to reuse functionality.
+		 * FIXME - inefficient implementation!
 		 */
 		@Override
-		public int compare(
-				byte[] b1, int start1, int length1, 
-				byte[] b2, int start2, int length2) {
-			return super.compare(
-					b1, start1, length1 - IntermediateKey.TIME_SIZE, 
-					b2, start2, length2 - IntermediateKey.TIME_SIZE);
+		public int compare(byte[] arg0, int arg1, int arg2, byte[] arg3,
+				int arg4, int arg5) {
+			this.compare(
+					new IntermediateKey(new String(arg0, arg1, arg2)), 
+					new IntermediateKey(new String(arg3, arg4, arg5)));
+			return 0;
+		}
+
+		@Override
+		public int compare(IntermediateKey arg0, IntermediateKey arg1) {
+			return arg0.getDateId().compareTo(arg1.getDateId());
+		}
+	}
+	
+	/**
+	 * Class defining how hadoop should order keys.
+	 */
+	public static final class KeyComparator implements RawComparator<IntermediateKey> {
+
+		/**
+		 * FIXME - inefficient implementation!
+		 */
+		@Override
+		public int compare(byte[] arg0, int arg1, int arg2, byte[] arg3,
+				int arg4, int arg5) {
+			this.compare(
+					new IntermediateKey(new String(arg0, arg1, arg2)), 
+					new IntermediateKey(new String(arg3, arg4, arg5)));
+			return 0;
+		}
+		
+		@Override
+		public int compare(IntermediateKey arg0, IntermediateKey arg1) {
+			int result = arg0.getDateId().compareTo(arg1.getDateId()); 
+			if( result == 0) {
+				result = arg0.getTime().compareTo(arg1.getTime());
+			}
+			return result;
 		}
 	}
 
@@ -323,7 +364,7 @@ public class Runner {
 		conf.setOutputKeyClass(IntermediateKey.class);
 		conf.setOutputValueClass(IntermediateValue.class);
 
-		conf.setOutputKeyComparatorClass(Text.Comparator.class);
+		conf.setOutputKeyComparatorClass(KeyComparator.class);
 		conf.setOutputValueGroupingComparator(GroupingComparator.class);
 		conf.setPartitionerClass(Partition.class);
 
