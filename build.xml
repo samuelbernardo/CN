@@ -172,3 +172,5 @@
 			failonerror="no"/>
 	</target>
 </project>
+
+<!-- vim: set ff=unix tabstop=2 shiftwidth=2 expandtab autoindent number fileencoding=utf-8 noai : -->
