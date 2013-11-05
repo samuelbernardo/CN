@@ -94,7 +94,6 @@ public class Runner {
 
 			switch (Integer.parseInt(event)) {
 			case PHONE_JOINS_NETWORK:
-				System.out.println("PHONE_JOINS_NETWORK");
 				nSecs = this.getNumberSeconds(time);
 				list.add(new Text(new Integer(nSecs).toString()));
 				list.add(new Text(Map.ZERO));
@@ -103,7 +102,6 @@ public class Runner {
 				output.collect(new IntermediateKey(OFFLINE_TIME, date, time, phone),new IntermediateValue(list));
 				break;
 			case PHONE_LEAVES_NETWORK:
-				System.out.println("PHONE_LEAVES_NETWORK");
 				nSecs = this.getNumberSeconds(time);
 				list.add(new Text(new Integer(nSecs).toString()));
 				list.add(new Text(Map.ZERO));
@@ -112,7 +110,6 @@ public class Runner {
 				output.collect(new IntermediateKey(OFFLINE_TIME, date, time, phone), new IntermediateValue(list));
 				break;
 			case PHONE_JOINS_CELL:
-				System.out.println("PHONE_JOINS_CELL");
 				list.add(new Text(Map.ENTER + phone)); 
 				output.collect(new IntermediateKey(PRESENT_PHONES, date, time, cell+":"+time.substring(0, 2)), new IntermediateValue(list));
 				list = new ArrayList<Text>(); 
@@ -120,16 +117,12 @@ public class Runner {
 				output.collect(new IntermediateKey(VISITED_CELLS, date, time, phone), new IntermediateValue(list));
 				break;
 			case PHONE_LEAVES_CELL:
-				System.out.println("PHONE_LEAVES_CELL");
 				list.add(new Text(Map.LEAVE + phone));
 				output.collect(new IntermediateKey(PRESENT_PHONES, date, time, cell+":"+time.substring(0, 2)), new IntermediateValue(list));
 				break;
 			case PHONE_INIT_CALL:
-				System.out.println("PHONE_INIT_CALL");
 			case PHONE_TERM_CALL:
-				System.out.println("PHONE_TERM_CALL");
 			case PHONE_PINGS_CELL:
-				System.out.println("PHONE_PINGS_CELL");
 				list.add(new Text(Map.ENTER + phone));
 				output.collect(new IntermediateKey(PRESENT_PHONES, date, time, cell+":"+time.substring(0, 2)), new IntermediateValue(list));
 				// If the first hour is gone, we don't need this "still alive"
@@ -178,19 +171,19 @@ public class Runner {
 				Iterator<IntermediateValue> it, 
 				OutputCollector<IntermediateKey, IntermediateValue> output, 
 				Reporter reporter) throws IOException {
-			IntermediateValue v = null;
+			IntermediateValue v = new IntermediateValue(it.next().getValues());
 			switch (Integer.parseInt(k.getQuery())) {
 			case VISITED_CELLS:
-				for(v = it.next(); it.hasNext(); reduceVisitedCells(v, it.next()));
+				for(; it.hasNext(); reduceVisitedCells(v, it.next()));
 				break;
 			case PRESENT_PHONES:
-				for(v = it.next(); it.hasNext(); reducePresentPhones(v, it.next()));
+				for(; it.hasNext(); reducePresentPhones(v, it.next()));
 				break;
 			case OFFLINE_TIME:
-				for(v = it.next(); it.hasNext(); reduceOfflineTime(v, it.next()));
+				for(; it.hasNext(); reduceOfflineTime(v, it.next()));
 				break;
 			}
-			System.out.println(k + "->" + v);
+			
 			output.collect(k, v);
 		}
 
@@ -201,7 +194,6 @@ public class Runner {
 		 * @param iv2
 		 */
 		private void reduceVisitedCells(IntermediateValue iv1, IntermediateValue iv2) {
-			System.out.println("reduceVisitedCells!");
 			// WARNING: there could be an issue here. If in the first hour of a day,
 			// the phone leaves the cell before pinging it, we will not record that
 			// the phone was in that cell.
@@ -217,19 +209,22 @@ public class Runner {
 		 * @param iv2
 		 */
 		private void reducePresentPhones(IntermediateValue iv1, IntermediateValue iv2) {
-			System.out.println("reducePresentPhones!");
 			for (Iterator<Text> i = iv2.getValues().iterator(); i.hasNext();) {
 				Text tmp = i.next();
 				// if contains, nothing to do.
 				if (iv1.getValues().contains(tmp)) { continue; }
 				else {
-					// change + to - or - to +
-					tmp.set((""+(tmp.charAt(0) == Map.ENTER ? Map.LEAVE : Map.ENTER)).getBytes(), 0, 2);
+					// change + to - or - to + 
+					// FIXME: inefficient code kills trees!
+					Text itmp = new Text(tmp);
+					if(tmp.charAt(0) == '+') { itmp.set(tmp.toString().replace('+', '-')); }
+					else { itmp.set(tmp.toString().replace('-', '+')); }
 					// if contains the inverse
-					if (iv1.getValues().contains(tmp)) {
-						@SuppressWarnings("unused")
-						boolean b = tmp.charAt(0) == '+' ? iv1.getValues().remove(tmp) : iv1.getValues().add(tmp);
+					if (iv1.getValues().contains(itmp)) {
+						iv1.getValues().remove(tmp);
+						iv1.getValues().add(itmp);
 					}
+					else { iv1.getValues().add(tmp); }
 				}			
 			}
 		}
@@ -245,7 +240,6 @@ public class Runner {
 		 * @param iv2
 		 */
 		private void reduceOfflineTime(IntermediateValue iv1, IntermediateValue iv2) {
-			System.out.println("reduceOfflineTime!");
 			Integer total = 0;
 			// get number of offline seconds seen by iv2.
 			int s1 = Integer.parseInt(iv2.getValues().get(1).toString());
@@ -296,7 +290,7 @@ public class Runner {
 		@Override
 		public int getPartition(
 				IntermediateKey k, IntermediateValue v, int numReduceTasks) {
-			return k.getDateId().hashCode() % numReduceTasks;
+			return k.getQueryDateId().hashCode() % numReduceTasks;
 		}
 
 	}
@@ -312,15 +306,20 @@ public class Runner {
 		@Override
 		public int compare(byte[] arg0, int arg1, int arg2, byte[] arg3,
 				int arg4, int arg5) {
-			this.compare(
+			return this.compare(
 					new IntermediateKey(new String(arg0, arg1, arg2)), 
 					new IntermediateKey(new String(arg3, arg4, arg5)));
-			return 0;
 		}
 
 		@Override
 		public int compare(IntermediateKey arg0, IntermediateKey arg1) {
-			return arg0.getDateId().compareTo(arg1.getDateId());
+			int result =  
+					arg0.getQuery().compareTo(arg1.getQuery()) == 0 ? 
+						arg0.getDate().compareTo(arg1.getDate()) == 0 ?
+								arg0.getId().compareTo(arg1.getId()) : 
+										arg0.getDate().compareTo(arg1.getDate()) :
+												arg0.getQuery().compareTo(arg1.getQuery());
+				return result;
 		}
 	}
 	
@@ -335,18 +334,21 @@ public class Runner {
 		@Override
 		public int compare(byte[] arg0, int arg1, int arg2, byte[] arg3,
 				int arg4, int arg5) {
-			this.compare(
+			return this.compare(
 					new IntermediateKey(new String(arg0, arg1, arg2)), 
 					new IntermediateKey(new String(arg3, arg4, arg5)));
-			return 0;
 		}
 		
 		@Override
 		public int compare(IntermediateKey arg0, IntermediateKey arg1) {
-			int result = arg0.getDateId().compareTo(arg1.getDateId()); 
-			if( result == 0) {
-				result = arg0.getTime().compareTo(arg1.getTime());
-			}
+			int result =  
+				arg0.getQuery().compareTo(arg1.getQuery()) == 0 ? 
+					arg0.getDate().compareTo(arg1.getDate()) == 0 ?
+							arg0.getId().compareTo(arg1.getId()) == 0 ?
+									arg0.getTime().compareTo(arg1.getTime()) : 
+										arg0.getId().compareTo(arg1.getId()) :
+											arg0.getDate().compareTo(arg1.getDate()) :
+												arg0.getQuery().compareTo(arg1.getQuery());
 			return result;
 		}
 	}
