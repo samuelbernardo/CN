@@ -19,6 +19,8 @@ import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
 import org.apache.hadoop.mapred.TextOutputFormat;
+import org.apache.hadoop.mapred.lib.db.DBConfiguration;
+import org.apache.hadoop.mapred.lib.db.DBOutputFormat;
 
 import project.mapred.types.intermediate.*;
 
@@ -442,6 +444,23 @@ public class Runner {
 		conf.setInputFormat(TextInputFormat.class);
 		conf.setOutputFormat(TextOutputFormat.class);
 
+		/**
+		 * Filippo:
+		 * this is the procedure for setting our RDB as the
+		 * output.
+		 */
+		conf.setOutputFormat(DBOutputFormat.class);
+
+		String userName="ist167074";
+		String password="eE92Hb41w";
+		String driver="org.postgresql.Driver";
+		String dbUrl="jdbc:postgresql://db.ist.utl.pt:5432/ist167074";
+		DBConfiguration.configureDB(conf, driver, dbUrl,userName,password);
+		
+		String table="employees";
+		String [] fields = { "employee_id", "name" }; 
+		DBOutputFormat.setOutput(conf, table, fields);
+		
 		FileInputFormat.setInputPaths(conf, new Path(args[0]));
 		FileOutputFormat.setOutputPath(conf, new Path(args[1]));
 
