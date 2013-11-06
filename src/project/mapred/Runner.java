@@ -1,6 +1,8 @@
 package project.mapred;
 
 import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*; 	
 
 import org.apache.hadoop.fs.Path;
@@ -111,30 +113,81 @@ public class Runner {
 				break;
 			case PHONE_JOINS_CELL:
 				list.add(new Text(Map.ENTER + phone)); 
-				output.collect(new IntermediateKey(PRESENT_PHONES, date, time, cell+":"+time.substring(0, 2)), new IntermediateValue(list));
+				output.collect(
+						new IntermediateKey(
+								PRESENT_PHONES, 
+								fixPresentPhonesDate(date, time), 
+								time, 
+								cell+":"+fixPresentPhonesHour(time.substring(0, 2))), 
+						new IntermediateValue(list));
 				list = new ArrayList<Text>(); 
 				list.add(new Text(cell));
 				output.collect(new IntermediateKey(VISITED_CELLS, date, time, phone), new IntermediateValue(list));
 				break;
 			case PHONE_LEAVES_CELL:
 				list.add(new Text(Map.LEAVE + phone));
-				output.collect(new IntermediateKey(PRESENT_PHONES, date, time, cell+":"+time.substring(0, 2)), new IntermediateValue(list));
+				output.collect(
+						new IntermediateKey(
+								PRESENT_PHONES, 
+								fixPresentPhonesDate(date, time), 
+								time, 
+								cell+":"+fixPresentPhonesHour(time.substring(0, 2))), 
+						new IntermediateValue(list));
 				break;
 			case PHONE_INIT_CALL:
 			case PHONE_TERM_CALL:
 			case PHONE_PINGS_CELL:
 				list.add(new Text(Map.ENTER + phone));
-				output.collect(new IntermediateKey(PRESENT_PHONES, date, time, cell+":"+time.substring(0, 2)), new IntermediateValue(list));
+				output.collect(
+						new IntermediateKey(
+								PRESENT_PHONES, 
+								fixPresentPhonesDate(date, time), 
+								time, 
+								cell+":"+fixPresentPhonesHour(time.substring(0, 2))), 
+						new IntermediateValue(list));
 				// If the first hour is gone, we don't need this "still alive"
 				// messages. 
 				if (this.getNumberSeconds(time) <= SECONDS_IN_HOUR) {
-					list = new ArrayList<Text>(); 
-					list.add(new Text(cell));
+					list = new ArrayList<Text>();
+					// This cell is marked to detect possible repetitions.
+					// Ugly solution though.
+					list.add(new Text(cell+"?"));
 					output.collect(new IntermediateKey(VISITED_CELLS, date, time, phone), new IntermediateValue(list));
 				}
 				break;
 			}
 		}
+		
+		/**
+		 * Increments the date by one day if the hour equals to 23.
+		 * @param date
+		 * @param hour
+		 * @return - the new date
+		 * @throws IOException 
+		 * @throws ParseException
+		 */
+		String fixPresentPhonesDate(String date, String time) throws IOException {
+			if (time.substring(0, 2).equals("23")) {
+				try {
+				SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+				Calendar cal = Calendar.getInstance();
+				cal.setTime(sdf.parse(date));
+				cal.add(Calendar.DATE, 1);
+				date = sdf.format(cal.getTime());
+				} catch (ParseException e) {
+					throw new IOException(e);
+				}
+			}
+			return date;
+		}
+		
+		/**
+		 * Increments the hour.
+		 * @param hour
+		 * @return
+		 */
+		String fixPresentPhonesHour(String hour) 
+		{ return String.format("%02d", (Integer.parseInt(hour)+1)%HOURS_IN_DAY); }
 
 		/**
 		 * Auxiliary method that will convert a string representing time in the
@@ -194,12 +247,24 @@ public class Runner {
 		 * @param iv2
 		 */
 		private void reduceVisitedCells(IntermediateValue iv1, IntermediateValue iv2) {
+			// FIXME
 			// WARNING: there could be an issue here. If in the first hour of a day,
 			// the phone leaves the cell before pinging it, we will not record that
 			// the phone was in that cell.
 			// UGLY SOLUTION: see if the disconnection happens within the first 
 			// hour and reproduce a ping.
-			iv1.getValues().addAll(iv2.getValues());
+			for(Iterator<Text> i = iv2.getValues().iterator(); i.hasNext();) {
+				String tmp = i.next().toString();
+				// means that it was not triggered by a join event. 
+				if(tmp.endsWith("?"))
+				{
+					// get the string without the '?'
+					String tmp2 = tmp.substring(0, tmp.length()-1);
+					if (!iv1.getValues().contains(new Text(tmp2))) 
+					{ iv1.getValues().add(new Text(tmp2)); }
+				}
+				else { iv1.getValues().add(new Text(tmp)); }
+			}
 		}
 
 		/**
