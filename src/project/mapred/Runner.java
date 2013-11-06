@@ -24,6 +24,7 @@ import org.apache.hadoop.mapred.RecordWriter;
 import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
+import org.apache.hadoop.mapred.TextOutputFormat;
 import org.apache.hadoop.util.Progressable;
 
 import project.mapred.types.intermediate.*;
@@ -434,6 +435,7 @@ public class Runner {
 		private static String USER = "ist167074";
 		private static String URL = "jdbc:postgresql://db.ist.utl.pt:5432/ist167074";
 		private static String PASS = "eE92Hb41w";
+		private static String TABLE = "logs";
 		private static Connection conn = null;
 
 		/**
@@ -472,6 +474,8 @@ public class Runner {
 						id = idnumber[0];
 						number = idnumber[1];
 						value = v.getValues().toString();
+						value.replaceAll("\\+|,", "");
+						value.replaceAll("\\-[0-9]*", value);
 						break;
 					case OFFLINE_TIME:
 						id = k.getId();
@@ -504,13 +508,13 @@ public class Runner {
 				 */
 				public String upsert(String date, String id, String number, String value) {
 				    String update = 
-				    		"UPDATE table SET " + 
+				    		"UPDATE "+ TABLE + " SET " + 
 				    				"number=" + number + 
 				    				"value=" + value + 
-				    		"WHERE date date=" + date + "and id=" + id + ";";
+				    		"WHERE date=" + date + "and id=" + id + ";";
 				    
 				    String insert = 
-				    		"INSERT INTO table (date, id, number, value) " +
+				    		"INSERT INTO "+ TABLE + " (date, id, number, value) " +
 				    		"SELECT " + date +"," + id + "," + number + "," + value +
 				    		"WHERE NOT EXISTS (SELECT 1 FROM table WHERE date=" + date + "and id="+ id + ");";
 				    return update + " " + insert;
@@ -549,8 +553,8 @@ public class Runner {
 		conf.setReducerClass(Reduce.class);
 
 		conf.setInputFormat(TextInputFormat.class);
-		//conf.setOutputFormat(TextOutputFormat.class);
-		conf.setOutputFormat(SQLOutputFormat.class);
+		conf.setOutputFormat(TextOutputFormat.class);
+		//conf.setOutputFormat(SQLOutputFormat.class);
 		
 		FileInputFormat.setInputPaths(conf, new Path(args[0]));
 		FileOutputFormat.setOutputPath(conf, new Path(args[1]));
