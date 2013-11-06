@@ -24,3 +24,8 @@ build.properties
 # Maven
 log/
 target/
+
+# Other
+*.swp
+.externalToolBuilders/
+
