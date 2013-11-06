@@ -1,6 +1,8 @@
 package project.mapred;
 
 import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*; 	
 
 import org.apache.hadoop.fs.Path;
@@ -94,7 +96,6 @@ public class Runner {
 
 			switch (Integer.parseInt(event)) {
 			case PHONE_JOINS_NETWORK:
-				System.out.println("PHONE_JOINS_NETWORK");
 				nSecs = this.getNumberSeconds(time);
 				list.add(new Text(new Integer(nSecs).toString()));
 				list.add(new Text(Map.ZERO));
@@ -103,7 +104,6 @@ public class Runner {
 				output.collect(new IntermediateKey(OFFLINE_TIME, date, time, phone),new IntermediateValue(list));
 				break;
 			case PHONE_LEAVES_NETWORK:
-				System.out.println("PHONE_LEAVES_NETWORK");
 				nSecs = this.getNumberSeconds(time);
 				list.add(new Text(new Integer(nSecs).toString()));
 				list.add(new Text(Map.ZERO));
@@ -112,36 +112,82 @@ public class Runner {
 				output.collect(new IntermediateKey(OFFLINE_TIME, date, time, phone), new IntermediateValue(list));
 				break;
 			case PHONE_JOINS_CELL:
-				System.out.println("PHONE_JOINS_CELL");
 				list.add(new Text(Map.ENTER + phone)); 
-				output.collect(new IntermediateKey(PRESENT_PHONES, date, time, cell+":"+time.substring(0, 2)), new IntermediateValue(list));
+				output.collect(
+						new IntermediateKey(
+								PRESENT_PHONES, 
+								fixPresentPhonesDate(date, time), 
+								time, 
+								cell+":"+fixPresentPhonesHour(time.substring(0, 2))), 
+						new IntermediateValue(list));
 				list = new ArrayList<Text>(); 
 				list.add(new Text(cell));
 				output.collect(new IntermediateKey(VISITED_CELLS, date, time, phone), new IntermediateValue(list));
 				break;
 			case PHONE_LEAVES_CELL:
-				System.out.println("PHONE_LEAVES_CELL");
 				list.add(new Text(Map.LEAVE + phone));
-				output.collect(new IntermediateKey(PRESENT_PHONES, date, time, cell+":"+time.substring(0, 2)), new IntermediateValue(list));
+				output.collect(
+						new IntermediateKey(
+								PRESENT_PHONES, 
+								fixPresentPhonesDate(date, time), 
+								time, 
+								cell+":"+fixPresentPhonesHour(time.substring(0, 2))), 
+						new IntermediateValue(list));
 				break;
 			case PHONE_INIT_CALL:
-				System.out.println("PHONE_INIT_CALL");
 			case PHONE_TERM_CALL:
-				System.out.println("PHONE_TERM_CALL");
 			case PHONE_PINGS_CELL:
-				System.out.println("PHONE_PINGS_CELL");
 				list.add(new Text(Map.ENTER + phone));
-				output.collect(new IntermediateKey(PRESENT_PHONES, date, time, cell+":"+time.substring(0, 2)), new IntermediateValue(list));
+				output.collect(
+						new IntermediateKey(
+								PRESENT_PHONES, 
+								fixPresentPhonesDate(date, time), 
+								time, 
+								cell+":"+fixPresentPhonesHour(time.substring(0, 2))), 
+						new IntermediateValue(list));
 				// If the first hour is gone, we don't need this "still alive"
 				// messages. 
 				if (this.getNumberSeconds(time) <= SECONDS_IN_HOUR) {
-					list = new ArrayList<Text>(); 
-					list.add(new Text(cell));
+					list = new ArrayList<Text>();
+					// This cell is marked to detect possible repetitions.
+					// Ugly solution though.
+					list.add(new Text(cell+"?"));
 					output.collect(new IntermediateKey(VISITED_CELLS, date, time, phone), new IntermediateValue(list));
 				}
 				break;
 			}
 		}
+		
+		/**
+		 * Increments the date by one day if the hour equals to 23.
+		 * @param date
+		 * @param hour
+		 * @return - the new date
+		 * @throws IOException 
+		 * @throws ParseException
+		 */
+		String fixPresentPhonesDate(String date, String time) throws IOException {
+			if (time.substring(0, 2).equals("23")) {
+				try {
+				SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+				Calendar cal = Calendar.getInstance();
+				cal.setTime(sdf.parse(date));
+				cal.add(Calendar.DATE, 1);
+				date = sdf.format(cal.getTime());
+				} catch (ParseException e) {
+					throw new IOException(e);
+				}
+			}
+			return date;
+		}
+		
+		/**
+		 * Increments the hour.
+		 * @param hour
+		 * @return
+		 */
+		String fixPresentPhonesHour(String hour) 
+		{ return String.format("%02d", (Integer.parseInt(hour)+1)%HOURS_IN_DAY); }
 
 		/**
 		 * Auxiliary method that will convert a string representing time in the
@@ -178,19 +224,19 @@ public class Runner {
 				Iterator<IntermediateValue> it, 
 				OutputCollector<IntermediateKey, IntermediateValue> output, 
 				Reporter reporter) throws IOException {
-			IntermediateValue v = null;
+			IntermediateValue v = new IntermediateValue(it.next().getValues());
 			switch (Integer.parseInt(k.getQuery())) {
 			case VISITED_CELLS:
-				for(v = it.next(); it.hasNext(); reduceVisitedCells(v, it.next()));
+				for(; it.hasNext(); reduceVisitedCells(v, it.next()));
 				break;
 			case PRESENT_PHONES:
-				for(v = it.next(); it.hasNext(); reducePresentPhones(v, it.next()));
+				for(; it.hasNext(); reducePresentPhones(v, it.next()));
 				break;
 			case OFFLINE_TIME:
-				for(v = it.next(); it.hasNext(); reduceOfflineTime(v, it.next()));
+				for(; it.hasNext(); reduceOfflineTime(v, it.next()));
 				break;
 			}
-			System.out.println(k + "->" + v);
+			
 			output.collect(k, v);
 		}
 
@@ -201,13 +247,24 @@ public class Runner {
 		 * @param iv2
 		 */
 		private void reduceVisitedCells(IntermediateValue iv1, IntermediateValue iv2) {
-			System.out.println("reduceVisitedCells!");
+			// FIXME
 			// WARNING: there could be an issue here. If in the first hour of a day,
 			// the phone leaves the cell before pinging it, we will not record that
 			// the phone was in that cell.
 			// UGLY SOLUTION: see if the disconnection happens within the first 
 			// hour and reproduce a ping.
-			iv1.getValues().addAll(iv2.getValues());
+			for(Iterator<Text> i = iv2.getValues().iterator(); i.hasNext();) {
+				String tmp = i.next().toString();
+				// means that it was not triggered by a join event. 
+				if(tmp.endsWith("?"))
+				{
+					// get the string without the '?'
+					String tmp2 = tmp.substring(0, tmp.length()-1);
+					if (!iv1.getValues().contains(new Text(tmp2))) 
+					{ iv1.getValues().add(new Text(tmp2)); }
+				}
+				else { iv1.getValues().add(new Text(tmp)); }
+			}
 		}
 
 		/**
@@ -217,19 +274,22 @@ public class Runner {
 		 * @param iv2
 		 */
 		private void reducePresentPhones(IntermediateValue iv1, IntermediateValue iv2) {
-			System.out.println("reducePresentPhones!");
 			for (Iterator<Text> i = iv2.getValues().iterator(); i.hasNext();) {
 				Text tmp = i.next();
 				// if contains, nothing to do.
 				if (iv1.getValues().contains(tmp)) { continue; }
 				else {
-					// change + to - or - to +
-					tmp.set((""+(tmp.charAt(0) == Map.ENTER ? Map.LEAVE : Map.ENTER)).getBytes(), 0, 2);
+					// change + to - or - to + 
+					// FIXME: inefficient code kills trees!
+					Text itmp = new Text(tmp);
+					if(tmp.charAt(0) == '+') { itmp.set(tmp.toString().replace('+', '-')); }
+					else { itmp.set(tmp.toString().replace('-', '+')); }
 					// if contains the inverse
-					if (iv1.getValues().contains(tmp)) {
-						@SuppressWarnings("unused")
-						boolean b = tmp.charAt(0) == '+' ? iv1.getValues().remove(tmp) : iv1.getValues().add(tmp);
+					if (iv1.getValues().contains(itmp)) {
+						iv1.getValues().remove(tmp);
+						iv1.getValues().add(itmp);
 					}
+					else { iv1.getValues().add(tmp); }
 				}			
 			}
 		}
@@ -245,7 +305,6 @@ public class Runner {
 		 * @param iv2
 		 */
 		private void reduceOfflineTime(IntermediateValue iv1, IntermediateValue iv2) {
-			System.out.println("reduceOfflineTime!");
 			Integer total = 0;
 			// get number of offline seconds seen by iv2.
 			int s1 = Integer.parseInt(iv2.getValues().get(1).toString());
@@ -296,7 +355,7 @@ public class Runner {
 		@Override
 		public int getPartition(
 				IntermediateKey k, IntermediateValue v, int numReduceTasks) {
-			return k.getDateId().hashCode() % numReduceTasks;
+			return k.getQueryDateId().hashCode() % numReduceTasks;
 		}
 
 	}
@@ -312,15 +371,20 @@ public class Runner {
 		@Override
 		public int compare(byte[] arg0, int arg1, int arg2, byte[] arg3,
 				int arg4, int arg5) {
-			this.compare(
+			return this.compare(
 					new IntermediateKey(new String(arg0, arg1, arg2)), 
 					new IntermediateKey(new String(arg3, arg4, arg5)));
-			return 0;
 		}
 
 		@Override
 		public int compare(IntermediateKey arg0, IntermediateKey arg1) {
-			return arg0.getDateId().compareTo(arg1.getDateId());
+			int result =  
+					arg0.getQuery().compareTo(arg1.getQuery()) == 0 ? 
+						arg0.getDate().compareTo(arg1.getDate()) == 0 ?
+								arg0.getId().compareTo(arg1.getId()) : 
+										arg0.getDate().compareTo(arg1.getDate()) :
+												arg0.getQuery().compareTo(arg1.getQuery());
+				return result;
 		}
 	}
 	
@@ -335,18 +399,21 @@ public class Runner {
 		@Override
 		public int compare(byte[] arg0, int arg1, int arg2, byte[] arg3,
 				int arg4, int arg5) {
-			this.compare(
+			return this.compare(
 					new IntermediateKey(new String(arg0, arg1, arg2)), 
 					new IntermediateKey(new String(arg3, arg4, arg5)));
-			return 0;
 		}
 		
 		@Override
 		public int compare(IntermediateKey arg0, IntermediateKey arg1) {
-			int result = arg0.getDateId().compareTo(arg1.getDateId()); 
-			if( result == 0) {
-				result = arg0.getTime().compareTo(arg1.getTime());
-			}
+			int result =  
+				arg0.getQuery().compareTo(arg1.getQuery()) == 0 ? 
+					arg0.getDate().compareTo(arg1.getDate()) == 0 ?
+							arg0.getId().compareTo(arg1.getId()) == 0 ?
+									arg0.getTime().compareTo(arg1.getTime()) : 
+										arg0.getId().compareTo(arg1.getId()) :
+											arg0.getDate().compareTo(arg1.getDate()) :
+												arg0.getQuery().compareTo(arg1.getQuery());
 			return result;
 		}
 	}
