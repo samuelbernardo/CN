@@ -1,10 +1,14 @@
 package project.mapred;
 
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*; 	
 
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.*;
 import org.apache.hadoop.mapred.FileInputFormat;
@@ -14,13 +18,13 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.MapReduceBase;
 import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
+import org.apache.hadoop.mapred.OutputFormat;
 import org.apache.hadoop.mapred.Partitioner;
+import org.apache.hadoop.mapred.RecordWriter;
 import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
-import org.apache.hadoop.mapred.TextOutputFormat;
-import org.apache.hadoop.mapred.lib.db.DBConfiguration;
-import org.apache.hadoop.mapred.lib.db.DBOutputFormat;
+import org.apache.hadoop.util.Progressable;
 
 import project.mapred.types.intermediate.*;
 
@@ -212,7 +216,7 @@ public class Runner {
 	public static class Reduce 
 	extends MapReduceBase 
 	implements Reducer<IntermediateKey, IntermediateValue, IntermediateKey, IntermediateValue> {
-
+		
 		/**
 		 * Reduce implementation.
 		 * @param key - the key for the given values.
@@ -380,13 +384,12 @@ public class Runner {
 
 		@Override
 		public int compare(IntermediateKey arg0, IntermediateKey arg1) {
-			int result =  
+			return   
 					arg0.getQuery().compareTo(arg1.getQuery()) == 0 ? 
 						arg0.getDate().compareTo(arg1.getDate()) == 0 ?
 								arg0.getId().compareTo(arg1.getId()) : 
 										arg0.getDate().compareTo(arg1.getDate()) :
 												arg0.getQuery().compareTo(arg1.getQuery());
-				return result;
 		}
 	}
 	
@@ -408,7 +411,7 @@ public class Runner {
 		
 		@Override
 		public int compare(IntermediateKey arg0, IntermediateKey arg1) {
-			int result =  
+			return   
 				arg0.getQuery().compareTo(arg1.getQuery()) == 0 ? 
 					arg0.getDate().compareTo(arg1.getDate()) == 0 ?
 							arg0.getId().compareTo(arg1.getId()) == 0 ?
@@ -416,10 +419,114 @@ public class Runner {
 										arg0.getId().compareTo(arg1.getId()) :
 											arg0.getDate().compareTo(arg1.getDate()) :
 												arg0.getQuery().compareTo(arg1.getQuery());
-			return result;
 		}
 	}
 
+	/**
+	 * Output formatter. This class will be used to output information into an
+	 * SQL table.
+	 */
+	public static class SQLOutputFormat implements OutputFormat<IntermediateKey, IntermediateValue> {
+		
+		/**
+		 * Access credentials (there credentials are public).
+		 */
+		private static String USER = "ist167074";
+		private static String URL = "jdbc:postgresql://db.ist.utl.pt:5432/ist167074";
+		private static String PASS = "eE92Hb41w";
+		private static Connection conn = null;
+
+		/**
+		 * Not needed. Empty implementation.
+		 */
+		@Override
+		public void checkOutputSpecs(FileSystem arg0, JobConf arg1)
+				throws IOException {}
+
+		/**
+		 * Class defining how to insert information on the database.
+		 */
+		@Override
+		public org.apache.hadoop.mapred.RecordWriter<IntermediateKey, IntermediateValue> getRecordWriter(
+				FileSystem arg0, JobConf arg1, String arg2, Progressable arg3)
+				throws IOException {
+			if (conn == null) 
+			{ 
+				try { conn = DriverManager.getConnection(URL,USER,PASS); } 
+				catch (SQLException e) { throw new IOException(e); } 
+			}
+			return new RecordWriter<IntermediateKey, IntermediateValue>() {
+				
+				@Override
+				public void write(IntermediateKey k, IntermediateValue v) throws IOException {
+					String date = k.getDate();
+					String id=null, number=null, value=null;
+					switch(Integer.parseInt(k.getQuery())) { 
+					case VISITED_CELLS:
+						id = k.getId();
+						value = v.getValues().toString();
+						number = "0";
+						break;
+					case PRESENT_PHONES:
+						String[] idnumber = k.getId().split(":");
+						id = idnumber[0];
+						number = idnumber[1];
+						value = v.getValues().toString();
+						break;
+					case OFFLINE_TIME:
+						id = k.getId();
+						number = v.getValues().get(3).toString();
+						value = "[]";
+						break;
+					}
+					
+				    try{
+				    	conn.prepareStatement(upsert(date, id, number, value)).executeUpdate();
+					    // FIXME: close connection
+					    conn.close();
+					    }catch(Exception e){ throw new IOException(e); }			
+				}
+				
+				/**
+				 * Method that prepares an UPSERT SQL operation.
+				 * This operation may cause race conditions on same scenarios.
+				 * However, two notes:
+				 * * Only two operations may conflict. All other <K,V> will not
+				 * collide.
+				 * * The two possible conflicting operations are separate in 
+				 * time by intermediate key ordering (so they will arrive here 
+				 * later). 
+				 * @param date
+				 * @param id
+				 * @param number
+				 * @param value
+				 * @return - the sql statement.
+				 */
+				public String upsert(String date, String id, String number, String value) {
+				    String update = 
+				    		"UPDATE table SET " + 
+				    				"number=" + number + 
+				    				"value=" + value + 
+				    		"WHERE date date=" + date + "and id=" + id + ";";
+				    
+				    String insert = 
+				    		"INSERT INTO table (date, id, number, value) " +
+				    		"SELECT " + date +"," + id + "," + number + "," + value +
+				    		"WHERE NOT EXISTS (SELECT 1 FROM table WHERE date=" + date + "and id="+ id + ");";
+				    return update + " " + insert;
+				}
+				
+				/**
+				 * Temporary empty implementation.
+				 * It could be useful to store a batch of sql updates in order
+				 * to commit all of them in just one step.
+				 */
+				@Override
+				public void close(Reporter arg0) throws IOException {}
+			};
+		}
+	}
+	
 
 	/**
 	 * Main
@@ -442,28 +549,11 @@ public class Runner {
 		conf.setReducerClass(Reduce.class);
 
 		conf.setInputFormat(TextInputFormat.class);
-		conf.setOutputFormat(TextOutputFormat.class);
-
-		/**
-		 * Filippo:
-		 * this is the procedure for setting our RDB as the
-		 * output.
-		 */
-		conf.setOutputFormat(DBOutputFormat.class);
-
-		String userName="ist167074";
-		String password="eE92Hb41w";
-		String driver="org.postgresql.Driver";
-		String dbUrl="jdbc:postgresql://db.ist.utl.pt:5432/ist167074";
-		DBConfiguration.configureDB(conf, driver, dbUrl,userName,password);
-		
-		String table="employees";
-		String [] fields = { "employee_id", "name" }; 
-		DBOutputFormat.setOutput(conf, table, fields);
+		//conf.setOutputFormat(TextOutputFormat.class);
+		conf.setOutputFormat(SQLOutputFormat.class);
 		
 		FileInputFormat.setInputPaths(conf, new Path(args[0]));
 		FileOutputFormat.setOutputPath(conf, new Path(args[1]));
-
 		JobClient.runJob(conf);
 	}
 }

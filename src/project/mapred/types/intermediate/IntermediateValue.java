@@ -3,15 +3,11 @@ package project.mapred.types.intermediate;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparable;
-import org.apache.hadoop.mapred.lib.db.DBWritable;
 
 
 /**
@@ -81,22 +77,4 @@ implements WritableComparable<IntermediateValue> {
 		int len = output.length();
 		return output.substring(1, len-1); 
 	}
-
-
-/** Filippo:
- * these two methods implement the WritableComparable interface.
- *  we don't care on readFields, 
- *  but we should implement write(PreparedStatement arg0)
- */
-	/*@Override
-	public void readFields(ResultSet arg0) throws SQLException {
-		// TODO Auto-generated method stub
-		
-	}
-	@Override
-	public void write(PreparedStatement arg0) throws SQLException {
-		// TODO Auto-generated method stub
-		arg0.setString(1, "");
-		arg0.setString(2, this.toString());
-	}*/
 }
