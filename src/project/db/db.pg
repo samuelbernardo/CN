@@ -1,9 +1,9 @@
 create table logs
 ( 
-  date varchar(255), not null unique,
-  id varchar(255), not null unique,
-  number varchar(255),
+  date varchar(255) not null,
+  id varchar(255) not null,
+  number varchar(255) not null,
   value varchar(255),
-  primary key(date,id));
+  primary key(date,id,number));
 
 

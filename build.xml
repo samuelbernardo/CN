@@ -85,6 +85,12 @@
       <compilerarg line="${javac.args} ${javac.args.warnings}" />
       <classpath refid="classpath"/>
     </javac>
+  	<unjar dest="${build.classes}">
+  	  <patternset id="postgresql"> 
+  	  	<include name="**/*.class" />
+  	  </patternset>
+  	  <fileset dir="${lib.dir}" includes="postgresql-9.3-1100.jdbc4.jar" />
+  	</unjar>
   </target>
 
   <!-- ================================================================== -->
