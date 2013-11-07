@@ -24,6 +24,7 @@ import org.apache.hadoop.mapred.RecordWriter;
 import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
+import org.apache.hadoop.mapred.TextOutputFormat;
 import org.apache.hadoop.util.Progressable;
 
 import project.mapred.types.intermediate.*;
@@ -476,8 +477,8 @@ public class Runner {
 						id = k.getId();
 						number = idnumber[1];
 						value = v.getValues().toString();
-						value.replaceAll("\\+|,", "");
-						value.replaceAll("\\-[0-9]*", value);
+						value = value.replaceAll("\\+|,", "");
+						value = value.replaceAll("\\-[0-9]*", "");
 						break;
 					case OFFLINE_TIME:
 						id = k.getId();
@@ -489,7 +490,6 @@ public class Runner {
 				    	String sttmnt = upsert(date, id, number, value);
 				    	System.out.println(sttmnt);
 				    	conn.prepareStatement(sttmnt).execute();
-					    // FIXME: close connection
 					    }catch(Exception e){ throw new IOException(e); }			
 				}
 				
