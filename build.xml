@@ -63,6 +63,13 @@
     <mkdir dir="${build.classes}"/>
   </target>
 
+  <target name="hdfsdirs">
+		<antcall target="executeHadoopCommand">
+				<param name="command"
+					value="dfs -mkdir ${hdfs_base_dir}/output ${hdfs_base_dir}/input" />
+		</antcall>
+  </target>
+
   <!--import file="${test.src.dir}/additional_confs.xml"/-->
 
   <!-- ====================================================== -->
@@ -115,7 +122,7 @@
 	<target name="clean-hdfs" description="Cleans the HDFS output directory for the project">
 		<antcall target="executeHadoopCommand">
 				<param name="command"
-					value="dfs -rmr ${hdfs_base_dir}/output" />
+					value="dfs -rmr ${hdfs_base_dir}" />
 		</antcall>
 	</target>
 	
@@ -142,13 +149,32 @@
   <!-- ================================================================== -->
   <!-- Mobile-Net hadoop execution                                        -->
   <!-- ================================================================== -->
-	<target name="test" description="test">
+	
+
+  <target name="copyLogs" depends="hdfsdirs" description="Copy input logs to hdfs">
+		<sshexec
+			host="${server}"
+			username="${username}"
+			password="${password}"
+			command="mkdir ${local.input.dir}"
+			failonerror="no"/>
+    <scp
+			todir="${username}:${password}@${server}:${local.input.dir}">
+      <fileset dir="${workspace.input.dir}"/>
+    </scp>
+		<antcall target="executeHadoopCommand">
+				<param name="command"
+					value="dfs -copyFromLocal ${local.input.dir}/* ${hdfs_base_dir}/input" />
+		</antcall>
+  </target>
+
+  <target name="test" description="test">
     	<antcall target="executeHadoopCommand">
         	<param name="command" value="" />
     	</antcall>
 	</target>
     
-	<target name="run" depends="clean-all,jar" description="Runs the project">
+	<target name="run" depends="clean-all,jar,copyLogs" description="Runs the project">
 		<scp 
 			file="${build.dir}/${final.name}.jar" 
 			todir="${username}:${password}@${server}:~/"/>
