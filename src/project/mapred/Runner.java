@@ -24,6 +24,7 @@ import org.apache.hadoop.mapred.RecordWriter;
 import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
+import org.apache.hadoop.mapred.TextOutputFormat;
 import org.apache.hadoop.util.Progressable;
 
 import project.mapred.types.intermediate.*;
@@ -434,6 +435,7 @@ public class Runner {
 		private static String USER = "ist167074";
 		private static String URL = "jdbc:postgresql://db.ist.utl.pt:5432/ist167074";
 		private static String PASS = "eE92Hb41w";
+		private static String TABLE = "logs";
 		private static Connection conn = null;
 
 		/**
@@ -452,8 +454,12 @@ public class Runner {
 				throws IOException {
 			if (conn == null) 
 			{ 
-				try { conn = DriverManager.getConnection(URL,USER,PASS); } 
+				try {
+					Class.forName("org.postgresql.Driver");
+					conn = DriverManager.getConnection(URL,USER,PASS); 
+				} 
 				catch (SQLException e) { throw new IOException(e); } 
+				catch (ClassNotFoundException e) { throw new IOException(e); } 
 			}
 			return new RecordWriter<IntermediateKey, IntermediateValue>() {
 				
@@ -465,25 +471,25 @@ public class Runner {
 					case VISITED_CELLS:
 						id = k.getId();
 						value = v.getValues().toString();
-						number = "0";
 						break;
 					case PRESENT_PHONES:
 						String[] idnumber = k.getId().split(":");
-						id = idnumber[0];
+						id = k.getId();
 						number = idnumber[1];
 						value = v.getValues().toString();
+						value = value.replaceAll("\\+|,", "");
+						value = value.replaceAll("\\-[0-9]*", "");
 						break;
 					case OFFLINE_TIME:
 						id = k.getId();
 						number = v.getValues().get(3).toString();
-						value = "[]";
 						break;
 					}
 					
 				    try{
-				    	conn.prepareStatement(upsert(date, id, number, value)).executeUpdate();
-					    // FIXME: close connection
-					    conn.close();
+				    	String sttmnt = upsert(date, id, number, value);
+				    	System.out.println(sttmnt);
+				    	conn.prepareStatement(sttmnt).execute();
 					    }catch(Exception e){ throw new IOException(e); }			
 				}
 				
@@ -503,16 +509,28 @@ public class Runner {
 				 * @return - the sql statement.
 				 */
 				public String upsert(String date, String id, String number, String value) {
+					String update2;
+					if(number == null) {
+						update2 = " value="+"\'"+value+"\' ";
+						number = "0";
+					} else if(value == null) {
+						update2 = " number="+"\'"+number+"\' ";
+						value = "[]";
+						
+					} else {
+						update2 = " value="+"\'"+value+"\', " + " number="+"\'"+number+"\' ";
+					}
 				    String update = 
-				    		"UPDATE table SET " + 
-				    				"number=" + number + 
-				    				"value=" + value + 
-				    		"WHERE date date=" + date + "and id=" + id + ";";
+				    		" UPDATE "+ TABLE + " SET " + update2 +
+				    		" WHERE date=" + "\'" + date + "\'" + " and id=" + "\'"+ id + "\';";
 				    
 				    String insert = 
-				    		"INSERT INTO table (date, id, number, value) " +
-				    		"SELECT " + date +"," + id + "," + number + "," + value +
-				    		"WHERE NOT EXISTS (SELECT 1 FROM table WHERE date=" + date + "and id="+ id + ");";
+				    		" INSERT INTO "+ TABLE + " (date, id, number, value) " +
+				    		" SELECT " + "\'" + date +"\'," 
+				    				   + "\'" + id + "\',"
+				    				   + "\'"+number+"\'," 
+				    				   + "\'"+value+"\'" +
+				    		" WHERE NOT EXISTS (SELECT 1 FROM "+ TABLE + " WHERE date=" + "\'" + date + "\' and id=\'"+ id + "\');";
 				    return update + " " + insert;
 				}
 				
