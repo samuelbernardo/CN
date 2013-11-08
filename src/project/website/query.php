@@ -3,30 +3,27 @@
   // getting url parameters
   $submit = $_GET['submit'];
   $date = $_GET['date'];
-  $cellId = "";
-  $phoneId = "";
+  $id = $_GET['id'];
   $time = "";
   $sql = "";
 
   if ($submit!="query2"){
-    $phoneId = $_GET['phoneId'];
 	if($submit == "query1"){
-		$sql = "SELECT cellId FROM visitedCells WHERE phoneId='$phoneId' and visitDate='$date'";	
+		$sql = "SELECT value FROM  logs WHERE id='$id' and date='$date'";	
   }
 	else{
-		$sql = "SELECT minutes FROM offMinutes WHERE phoneId='$phoneId' and offDate='$date'";	
+		$sql = "SELECT number FROM logs WHERE id='$id' and date='$date'";	
 	}
   }
   else{
-    $cellId = $_GET['cellId'];
 	$time = $_GET['time'];
-	$sql = "SELECT phoneId FROM presentPhones WHERE cellId='$cellId' and presentDate='$date' and presentTime='$time'";
+	$sql = "SELECT value FROM logs WHERE id like '$id%' and date='$date' and number='$time'";
   }
 
   echo"<div id='queryResult'>";
   // <DEBUG>
   echo($sql);	
-  echo "/n submit=$submit date= $date cellId=$cellId phoneId=$phoneId time=$time";
+  echo "/n submit=$submit date= $date id=$id time=$time";
   // </DEBUG>
 
 
@@ -35,13 +32,12 @@
   $host = 'db.ist.utl.pt';
   $port = 5432;
   $password = "eE92Hb41w";
-  $dbname = $db_user;
+  $dbname = $user;
   $connection = pg_connect("host=$host port=$port user=$user password=$password dbname=$dbname") or die(pg_last_error());
 	
   // <DEBUG>
   echo("<p>Connected to Postgres on $host as user $user on database $dbname.</p>");
   // </DEBUG>
-
 
   // query to get results
   $result = pg_query($sql) or die('ERROR: ' . pg_last_error());
@@ -75,7 +71,6 @@
 		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
 		<link href="css/style.css" rel="stylesheet" type="text/css" />
 		<script type="text/javascript" src="js/valid.js"></script>
-
 <title>CN project: Filippo Rodrigo Samuel</title>
 </header>
 <body>
@@ -88,7 +83,7 @@
 		<div class="queryForm">
 		Query 1
 		<form name="query1" id="query1" method="get" action="query.php" onsubmit="return sendQuery(this)">
-			phoneId:<input type="text" name="phoneId" id="phoneId1" value="phoneId" onclick="whiteField(this,'phoneId')"></i>
+			phoneId:<input type="text" name="id" id="phoneId1" value="phoneId" onclick="whiteField(this,'phoneId')"></i>
 			date:<input type="text" name="date" id="date1" value="date" onclick="whiteField(this,'date')"></i>
 			<input type="submit" name="submit" id="submit1" value ="query1"></i>
 		</form>
@@ -96,22 +91,20 @@
 	<div class="queryForm">
 		Query 2
 		<form name="query2" id="query2" method="get" action="query.php" onsubmit="return sendQuery(this)">
-				cellId:<input type="text" name="cellId" id="cellId2" value="cellId" onclick="whiteField(this,'cellId')"></i>
-				date:<input type="text" name="date" id="date2" value="date" onclick="whiteField(this,'date')"></i>
-				time:<input type="text" name="time" id="time2" value="time" onclick="whiteField(this,'time')"></i>
-
-				<input type="submit" name="submit" id="submit" value= "query2"></i>
+			cellId:<input type="text" name="id" id="cellId2" value="cellId" onclick="whiteField(this,'cellId')"></i>
+			date:<input type="text" name="date" id="date2" value="date" onclick="whiteField(this,'date')"></i>
+			time:<input type="text" name="time" id="time2" value="time" onclick="whiteField(this,'time')"></i>
+			<input type="submit" name="submit" id="submit" value= "query2"></i>
 		</form>
 	</div>
 	<div class="queryForm">
 		Query 3
 		<form name="query3" id="query3" method="get" action="query.php" onsubmit="return sendQuery(this)">
-				phoneId:<input type="text" name="phoneId" id="phoneId3" value="phoneId" onclick="whiteField(this,'phoneId')"></i>
-				date:<input type="text" name="date" id="date3" value="date" onclick="whiteField(this,'date')"></i>
-				<input type="submit" name="submit" id="submit3" value="query3"></i>
+			phoneId:<input type="text" name="id" id="phoneID3" value="phoneId" onclick="whiteField(this,'phoneId')"></i>
+			date:<input type="text" name="date" id="date3" value="date" onclick="whiteField(this,'date')"></i>
+			<input type="submit" name="submit" id="submit3" value="query3"></i>
 		</form>
-    	</div>
+	</div>
     </div>
-
 </body>
 </html>
