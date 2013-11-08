@@ -71,7 +71,7 @@ public class Runner {
 		public static final char LEAVE = '-';
 		public static final String ZERO = "0";
 		public static final int SECONDS_IN_HOUR = 60*60;
-		public static final int SECONDS_IN_DAY = SECONDS_IN_HOUR*60;
+		public static final int SECONDS_IN_DAY = SECONDS_IN_HOUR*24;
 		public static final int HOURS_IN_DAY = 24;
 		public static final String VISITED_CELLS = new String(new Integer(Runner.VISITED_CELLS).toString());
 		public static final String PRESENT_PHONES = new String(new Integer(Runner.PRESENT_PHONES).toString());
@@ -105,7 +105,7 @@ public class Runner {
 			case PHONE_JOINS_NETWORK:
 				nSecs = this.getNumberSeconds(time);
 				list.add(new Text(new Integer(nSecs).toString()));
-				list.add(new Text(Map.ZERO));
+				list.add(new Text(new Integer(nSecs).toString()));
 				list.add(new Text(Map.YES));
 				list.add(new Text(Map.ZERO));
 				output.collect(new IntermediateKey(OFFLINE_TIME, date, time, phone),new IntermediateValue(list));
@@ -304,7 +304,7 @@ public class Runner {
 		/**
 		 * Auxiliary method that will reduce the OfflineTime pairs.
 		 * The list will have the following format: 
-		 *  <number of seconds since the last event,
+		 *  <number of seconds of the last event,
 		 *   number of offline seconds before the last event, 
 		 *   if the phone is off the network after the last event,
 		 *   number of expected offline seconds for all the day>
@@ -327,14 +327,12 @@ public class Runner {
 				int s4 = Integer.parseInt(iv1.getValues().get(0).toString());
 				total += s3-s4;
 			}
-			
-			// get the expected number of offline seconds for all the day.
-			int s5 = Integer.parseInt(iv2.getValues().get(3).toString());
-			 
+						 
 			iv1.getValues().set(0, iv2.getValues().get(0));
 			iv1.getValues().set(1, new Text(total.toString()));
 			iv1.getValues().set(2, iv2.getValues().get(2));
-			iv1.getValues().set(3, new Text(new Integer(total + s5).toString()));
+			// get the expected number of offline seconds for all the day.
+			iv1.getValues().set(3, iv2.getValues().get(3));
 		}
 	}
 
@@ -482,7 +480,10 @@ public class Runner {
 						break;
 					case OFFLINE_TIME:
 						id = k.getId();
-						number = v.getValues().get(3).toString();
+						Integer tmp = 
+								((new Integer(v.getValues().get(3).toString()) + 
+								  new Integer(v.getValues().get(1).toString()))/60);
+						number =  tmp.toString();
 						break;
 					}
 					

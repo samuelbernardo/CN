@@ -66,7 +66,7 @@
   <target name="hdfsdirs">
 		<antcall target="executeHadoopCommand">
 				<param name="command"
-					value="dfs -mkdir ${hdfs_base_dir}/output ${hdfs_base_dir}/input" />
+					value="dfs -mkdir ${hdfs_base_dir}/input" />
 		</antcall>
   </target>
 
