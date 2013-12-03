@@ -57,6 +57,11 @@ implements WritableComparable<IntermediateValue> {
 	 * Getters
 	 */
 	public List<Text> getValues() { return this.values; }
+	
+	/**
+	 * Setters
+	 */
+	public void setValues(List<Text> values) { this.values = values; }
 
 	/**
 	 * Compares two objects of the same class.
