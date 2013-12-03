@@ -37,20 +37,20 @@ public class ReducerImpl {
 			IntermediateValue fv = new IntermediateValue(it.next().getValues());
 			switch (Integer.parseInt(k.getQuery())) {
 			/**  
-			 * The received list uses the following format: <Cx>
-			 * The produced list uses the following format: <Cx1,...>
+			 * The received list uses the following format: <time;Cx>
+			 * The produced list uses the following format: <time;Cx1,...>
 			 */
 			case Runner.VISITED_CELLS:
-				String lastCell = fv.getValues().get(0).toString();
+				String lastCell = fv.getValues().get(0).toString().split(";")[1];
 				List<Text> visited = new ArrayList<Text>();
 				visited.add(new Text(lastCell));
 				for(IntermediateValue value = null; it.hasNext();) {
 					value = it.next();
-					String cell = value.getValues().get(0).toString();
+					String cell = value.getValues().get(0).toString().split(";")[1];
 					// ignore replicated events
 					if(lastCell.equals(cell)) { continue; }
 					lastCell = cell;
-					visited.add(new Text(lastCell));
+					visited.add(value.getValues().get(0));
 				}
 				fv.setValues(visited);
 				break;
@@ -76,6 +76,13 @@ public class ReducerImpl {
 						// if doen't contain, insert
 						else { phones.add(phone); }
 					}
+				}
+				// Removes phones with initial '+' (the ones that entered after)
+				// Removes initial '-' from the other
+				for(int i = 0; i < phones.size(); i++) { 
+					String phone = phones.get(i).toString();
+					if(phone.startsWith("+")) { phones.remove(i--); } 
+					else { phones.set(i, new Text(phone.substring(1))); }
 				}
 				break;
 			/**  

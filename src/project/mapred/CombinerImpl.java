@@ -37,7 +37,11 @@ public class CombinerImpl {
 			 // Only combine the PRESENT_PHONES
 			 // The received list uses the following format: <eventTime, [+|-]phone>
 			 // The produced list uses the following format: <[+|-]phone,...>
-			if (Integer.parseInt(k.getQuery()) == Runner.PRESENT_PHONES) {
+			switch (Integer.parseInt(k.getQuery())) {
+			case Runner.VISITED_CELLS:
+				// TODO: read database id=k.getId(), data=k.getDate() ->value
+				break;
+			case Runner.PRESENT_PHONES:
 				String firstEventTime = fv.getValues().get(0).toString();
 				List<Text> phones = new ArrayList<Text>();
 				phones.add(fv.getValues().get(1));
@@ -61,6 +65,10 @@ public class CombinerImpl {
 				// prepare pair to be collected.
 				k = new IntermediateKey(k.getQuery(), k.getDate(), firstEventTime, k.getId());
 				fv.setValues(phones);
+				break;
+			case Runner.OFFLINE_TIME:
+				// TODO: read database id=k.getId(), data=k.getDate() ->number
+				break;
 			}
 			output.collect(k, fv);
 		}

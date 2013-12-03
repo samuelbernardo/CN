@@ -101,7 +101,7 @@ public class MapperImpl {
 						new IntermediateValue(list));
 				// VISITED_CELLS
 				list = new ArrayList<Text>(); 
-				list.add(new Text(cell));
+				list.add(new Text(time+";"+cell));
 				output.collect(new IntermediateKey(VISITED_CELLS, date, time, phone), new IntermediateValue(list));
 				break;
 			case PHONE_LEAVES_CELL:
@@ -119,7 +119,7 @@ public class MapperImpl {
 				// Mark that the phone was in this cell before leaving.
 				if (this.getNumberSeconds(time) <= SECONDS_IN_HOUR) {
 					list = new ArrayList<Text>();
-					list.add(new Text(cell));
+					list.add(new Text(time+";"+cell));
 					output.collect(new IntermediateKey(VISITED_CELLS, date, time, phone), new IntermediateValue(list));
 				}
 				break;
@@ -140,7 +140,7 @@ public class MapperImpl {
 				// Mark that the phone is in this cell. 
 				if (this.getNumberSeconds(time) <= SECONDS_IN_HOUR) {
 					list = new ArrayList<Text>();
-					list.add(new Text(cell));
+					list.add(new Text(time+";"+cell));
 					output.collect(new IntermediateKey(VISITED_CELLS, date, time, phone), new IntermediateValue(list));
 				}
 				break;

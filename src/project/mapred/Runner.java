@@ -22,7 +22,7 @@ import org.apache.hadoop.util.Progressable;
 import project.mapred.types.intermediate.*;
 
 /**
- * Class that holds the implementation of the Map, Reduce and auxiliary classes.
+ * Class that holds the job configuration classess.
  */
 public class Runner {
 
