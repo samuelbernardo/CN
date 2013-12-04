@@ -1,7 +1,12 @@
 package project.mapred;
 
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
@@ -22,6 +27,12 @@ public class ReducerImpl {
 	implements Reducer<IntermediateKey, IntermediateValue, IntermediateKey, IntermediateValue> {
 		
 		/**
+		 * TODO 
+		 */
+		private static HashMap<String,String> cache_offline = new HashMap<String,String>();
+		private static HashMap<String,String> cache_visited = new HashMap<String,String>();
+			
+		/**
 		 * Reduce implementation.
 		 * @param key - the key for the given values.
 		 * @param it - values' iterator.
@@ -41,9 +52,10 @@ public class ReducerImpl {
 			 * The produced list uses the following format: <time;Cx1,...>
 			 */
 			case Runner.VISITED_CELLS:
+				System.out.println(k.getDate() +","+ k.getId()+","+getSQLRecord(cache_visited, k.getDate(), k.getId()));
 				String lastCell = fv.getValues().get(0).toString().split(";")[1];
 				List<Text> visited = new ArrayList<Text>();
-				visited.add(new Text(lastCell));
+				visited.add(new Text(fv.getValues().get(0)));
 				for(IntermediateValue value = null; it.hasNext();) {
 					value = it.next();
 					String cell = value.getValues().get(0).toString().split(";")[1];
@@ -90,6 +102,7 @@ public class ReducerImpl {
 			 * The produced list uses the following format: <onlineTime>
 			 */
 			case Runner.OFFLINE_TIME:
+				System.out.println(k.getDate() +","+ k.getId()+","+getSQLRecord(cache_offline, k.getDate(), k.getId()));
 				String lastState = fv.getValues().get(0).toString();
 				Integer onlineTime = 0;
 				Integer lastEventTime = Integer.parseInt(fv.getValues().get(1).toString());
@@ -118,6 +131,52 @@ public class ReducerImpl {
 				break;
 			}
 			output.collect(k, fv);
+		}		
+	
+		/**
+		 * TODO
+		 * @param data
+		 * @param id
+		 * @return
+		 */
+		public String getSQLRecord(HashMap<String,String> cache, String date, String id) {
+			if(cache.containsKey(date+id)) { return cache.get(date+id); }
+			else {
+				ResultSet rs = null;
+				try {
+					Connection conn = Runner.SQLOutputFormat.getSQLConnection();
+					Statement stmt = conn.createStatement(
+							ResultSet.TYPE_FORWARD_ONLY, 
+							ResultSet.CONCUR_READ_ONLY);
+					rs = stmt.executeQuery("SELECT number, value FROM logs WHERE date=\'"+date+"\' and id=\'"+id+"\'");
+					if(rs.next()) { 
+						cache_offline.put(date+id, rs.getString("number"));
+						cache_visited.put(date+id, rs.getString("value"));
+					}
+				} 
+				catch (SQLException e) { e.printStackTrace(); }
+				catch (IOException e) { e.printStackTrace(); }
+				// just close the results.
+				finally { 
+					if(rs != null) {
+						try { rs.close(); }
+						// this should not happen
+						catch (SQLException e) { e.printStackTrace(); } 
+					} 
+				}
+				// if some error happened or if there is no registry in the DB.
+				return cache.get(date+id);
+			}
+		}
+		
+		/**
+		 * 
+		 * @param date
+		 * @param id
+		 * @return
+		 */
+		public String getVisitedCells(String date, String id) {
+			return null;
 		}
 	}
 }

@@ -39,7 +39,6 @@ public class CombinerImpl {
 			 // The produced list uses the following format: <[+|-]phone,...>
 			switch (Integer.parseInt(k.getQuery())) {
 			case Runner.VISITED_CELLS:
-				// TODO: read database id=k.getId(), data=k.getDate() ->value
 				break;
 			case Runner.PRESENT_PHONES:
 				String firstEventTime = fv.getValues().get(0).toString();

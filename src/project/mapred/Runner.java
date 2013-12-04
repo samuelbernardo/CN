@@ -135,6 +135,24 @@ public class Runner {
 		private static String PASS = "eE92Hb41w";
 		private static String TABLE = "logs";
 		private static Connection conn = null;
+		
+		/**
+		 * Helper to get a connection.
+		 * @return - an sql connection.
+		 * @throws IOException - if something goes wrong creating the connection.
+		 */
+		public static Connection getSQLConnection() throws IOException {
+			if (conn == null) { 
+				try {
+					Class.forName("org.postgresql.Driver");
+					conn = DriverManager.getConnection(URL,USER,PASS); 
+				} 
+				catch (SQLException e) { throw new IOException(e); } 
+				catch (ClassNotFoundException e) { throw new IOException(e); } 
+			}
+			return conn;
+		}
+		
 
 		/**
 		 * Not needed. Empty implementation.
@@ -150,15 +168,6 @@ public class Runner {
 		public org.apache.hadoop.mapred.RecordWriter<IntermediateKey, IntermediateValue> getRecordWriter(
 				FileSystem arg0, JobConf arg1, String arg2, Progressable arg3)
 				throws IOException {
-			if (conn == null) 
-			{ 
-				try {
-					Class.forName("org.postgresql.Driver");
-					conn = DriverManager.getConnection(URL,USER,PASS); 
-				} 
-				catch (SQLException e) { throw new IOException(e); } 
-				catch (ClassNotFoundException e) { throw new IOException(e); } 
-			}
 			return new RecordWriter<IntermediateKey, IntermediateValue>() {
 				
 				@Override
@@ -180,17 +189,14 @@ public class Runner {
 						break;
 					case OFFLINE_TIME:
 						id = k.getId();
-						Integer tmp = 
-								((new Integer(v.getValues().get(3).toString()) + 
-								  new Integer(v.getValues().get(1).toString()))/60);
+						Integer tmp = new Integer(v.getValues().get(0).toString())/60;
 						number =  tmp.toString();
 						break;
 					}
 					
 				    try{
 				    	String sttmnt = upsert(date, id, number, value);
-				    	System.out.println(sttmnt);
-				    	conn.prepareStatement(sttmnt).execute();
+				    	getSQLConnection().prepareStatement(sttmnt).execute();
 					    }catch(Exception e){ throw new IOException(e); }			
 				}
 				
@@ -268,8 +274,8 @@ public class Runner {
 		conf.setReducerClass(ReducerImpl.Reduce.class);
 
 		conf.setInputFormat(TextInputFormat.class);
-		conf.setOutputFormat(TextOutputFormat.class);
-		//conf.setOutputFormat(SQLOutputFormat.class);
+		//conf.setOutputFormat(TextOutputFormat.class);
+		conf.setOutputFormat(SQLOutputFormat.class);
 		
 		FileInputFormat.setInputPaths(conf, new Path(args[0]));
 		FileOutputFormat.setOutputPath(conf, new Path(args[1]));
