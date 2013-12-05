@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.*;
@@ -18,6 +21,16 @@ import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
 import org.apache.hadoop.mapred.TextOutputFormat;
 import org.apache.hadoop.util.Progressable;
+
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
+import com.amazonaws.services.dynamodbv2.model.AttributeAction;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.AttributeValueUpdate;
+import com.amazonaws.services.dynamodbv2.model.ReturnValue;
+import com.amazonaws.services.dynamodbv2.model.UpdateItemRequest;
+import com.amazonaws.services.dynamodbv2.model.UpdateItemResult;
+import com.amazonaws.services.elasticmapreduce.util.BootstrapActions.Daemon;
 
 import project.mapred.types.intermediate.*;
 
@@ -177,19 +190,19 @@ public class Runner {
 					switch(Integer.parseInt(k.getQuery())) { 
 					case VISITED_CELLS:
 						id = k.getId();
-						value = v.getValues().toString();
+						value = v.getValues().toString().replaceAll(",", "");
+						value  = value.substring(1,value.length()-1);
 						break;
 					case PRESENT_PHONES:
 						String[] idnumber = k.getId().split(":");
 						id = k.getId();
 						number = idnumber[1];
-						value = v.getValues().toString();
-						value = value.replaceAll("\\+|,", "");
-						value = value.replaceAll("\\-[0-9]*", "");
+						value = v.getValues().toString().replaceAll(",", "");
+						value  = value.substring(1,value.length()-1);
 						break;
 					case OFFLINE_TIME:
 						id = k.getId();
-						Integer tmp = new Integer(v.getValues().get(0).toString())/60;
+						Integer tmp = new Integer(v.getValues().get(0).toString());
 						number =  tmp.toString();
 						break;
 					}
@@ -197,7 +210,7 @@ public class Runner {
 				    try{
 				    	String sttmnt = upsert(date, id, number, value);
 				    	getSQLConnection().prepareStatement(sttmnt).execute();
-					    }catch(Exception e){ throw new IOException(e); }			
+					}catch(Exception e){ throw new IOException(e); }			
 				}
 				
 				/**
@@ -252,6 +265,122 @@ public class Runner {
 		}
 	}
 	
+	/**
+	 * Output formatter. This class will be used to output information into an
+	 * DynamoDB table.
+	 */
+	public static class DynamoDBOutputFormat implements OutputFormat<IntermediateKey, IntermediateValue> {
+
+		/**
+		 * Access credentials (there credentials are public).
+		 */
+		private static String USER = "AKIAJSRJRTI5GRQNROMA";
+		private static String URL = "dynamodb.us-west-2.amazonaws.com";
+		private static String PASS = "q8hLa8kTNOXIacpzxi4hfj3wxUh9DzeWqb1IM15L";
+		private static String TABLE = "CN_logs";
+		private static AmazonDynamoDBClient conn = null;		
+		
+		/**
+		 * Helper to get a connection.
+		 * @return - a DynamoDB connection.
+		 * @throws IOException - if something goes wrong creating the connection.
+		 */
+		public static AmazonDynamoDBClient getDynamoDBConnection() throws IOException {
+			if(conn == null) {
+		        BasicAWSCredentials credentials = new BasicAWSCredentials(USER,PASS);  
+		        conn = new AmazonDynamoDBClient(credentials);
+		        conn.setEndpoint(URL);
+			}
+	        return conn;
+
+		}
+		
+		/**
+		 * Not needed. Empty implementation.
+		 */
+		@Override
+		public void checkOutputSpecs(FileSystem arg0, JobConf arg1)
+				throws IOException {}
+
+		/**
+		 * Class defining how to insert information on the database.
+		 */
+		@Override
+		public RecordWriter<IntermediateKey, IntermediateValue> getRecordWriter(
+				FileSystem arg0, JobConf arg1, String arg2, Progressable arg3)
+				throws IOException {
+			return new RecordWriter<IntermediateKey, IntermediateValue>() {
+				
+				@Override
+				public void write(IntermediateKey k, IntermediateValue v)
+						throws IOException {
+					String date = k.getDate();
+					String id=null, number=null, value=null;
+					
+					Map<String, AttributeValueUpdate> updateItems = new HashMap<String, AttributeValueUpdate>();
+					HashMap<String, AttributeValue> key = new HashMap<String, AttributeValue>();
+
+					
+					switch(Integer.parseInt(k.getQuery())) { 
+					case VISITED_CELLS:
+						id = k.getId();
+						value = v.getValues().toString().replaceAll(",", "");
+						value  = value.substring(1,value.length()-1);
+						dynamoUpdater(updateItems, "value", value);
+						break;
+					case PRESENT_PHONES:
+						String[] idnumber = k.getId().split(":");
+						id = k.getId();
+						number = idnumber[1];
+						value = v.getValues().toString().replaceAll(",", "");
+						value  = value.substring(1,value.length()-1);
+						dynamoUpdater(updateItems, "value", value);
+						dynamoUpdater(updateItems, "number", number);
+						break;
+					case OFFLINE_TIME:
+						id = k.getId();
+						Integer tmp = new Integer(v.getValues().get(0).toString());
+						number =  tmp.toString();
+						dynamoUpdater(updateItems, "number", number);
+						break;
+					}
+					key.put("date-id", new AttributeValue().withS(date+"-"+id));
+					
+					UpdateItemRequest updateItemRequest = new UpdateItemRequest()
+					  .withTableName(TABLE)
+					  .withKey(key).withReturnValues(ReturnValue.UPDATED_NEW)
+					  .withAttributeUpdates(updateItems);
+					            
+					UpdateItemResult result = getDynamoDBConnection().updateItem(updateItemRequest);
+					
+	
+				}
+				
+				/**
+				 * Temporary empty implementation.
+				 * It could be useful to store a batch of sql updates in order
+				 * to commit all of them in just one step.
+				 */
+				@Override
+				public void close(Reporter arg0) throws IOException {}
+				
+				public void dynamoUpdater(
+						Map<String, AttributeValueUpdate> updateItems, 
+						String attribute, 
+						String value) {
+					if(value.length() == 0) { return; }
+					// DynamoDB update
+					updateItems.put(attribute, 
+							  new AttributeValueUpdate()
+							    .withAction(AttributeAction.PUT)
+							    .withValue(new AttributeValue().withSS(value)));
+					
+				}
+			};
+		}
+		
+	}
+	
 
 	/**
 	 * Main
@@ -275,7 +404,8 @@ public class Runner {
 
 		conf.setInputFormat(TextInputFormat.class);
 		//conf.setOutputFormat(TextOutputFormat.class);
-		conf.setOutputFormat(SQLOutputFormat.class);
+		//conf.setOutputFormat(SQLOutputFormat.class);
+		conf.setOutputFormat(DynamoDBOutputFormat.class);
 		
 		FileInputFormat.setInputPaths(conf, new Path(args[0]));
 		FileOutputFormat.setOutputPath(conf, new Path(args[1]));

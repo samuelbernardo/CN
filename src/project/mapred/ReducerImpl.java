@@ -52,7 +52,6 @@ public class ReducerImpl {
 			 * The produced list uses the following format: <time;Cx1,...>
 			 */
 			case Runner.VISITED_CELLS:
-				System.out.println(k.getDate() +","+ k.getId()+","+getSQLRecord(cache_visited, k.getDate(), k.getId()));
 				String lastCell = fv.getValues().get(0).toString().split(";")[1];
 				List<Text> visited = new ArrayList<Text>();
 				visited.add(new Text(fv.getValues().get(0)));
@@ -64,6 +63,23 @@ public class ReducerImpl {
 					lastCell = cell;
 					visited.add(value.getValues().get(0));
 				}
+				// get info stored on the DB
+				String visited_db = getSQLRecord(cache_visited, k.getDate(), k.getId());
+				String[] dbv = visited_db == null ? new String[0] : visited_db.split(" ");
+				ArrayList<Text> dbl = new ArrayList<Text>();
+				// Create a new list of texts
+				for(String s : dbv) { dbl.add(new Text(s)); }
+				// merge two sorted lists
+				for(int i = 0; i < visited.size() && dbl.size() > 0; i++) {
+					// remove duplicates
+					if(visited.get(i).compareTo(dbl.get(0)) == 0)
+					{ dbl.remove(0); }
+					else if(visited.get(i).compareTo(dbl.get(0)) > 0) 
+					{ visited.add(i, dbl.remove(0)); }
+				}
+				// merge the rest
+				visited.addAll(dbl);
+				
 				fv.setValues(visited);
 				break;
 			/** 
@@ -102,7 +118,6 @@ public class ReducerImpl {
 			 * The produced list uses the following format: <onlineTime>
 			 */
 			case Runner.OFFLINE_TIME:
-				System.out.println(k.getDate() +","+ k.getId()+","+getSQLRecord(cache_offline, k.getDate(), k.getId()));
 				String lastState = fv.getValues().get(0).toString();
 				Integer onlineTime = 0;
 				Integer lastEventTime = Integer.parseInt(fv.getValues().get(1).toString());
@@ -123,10 +138,18 @@ public class ReducerImpl {
 					lastState = state;
 					lastEventTime = eventTime;
 				}
-				// Fix the online time for the rest of the day.
-				onlineTime += lastState.equals(Map.ENTER) ? Map.SECONDS_IN_DAY - lastEventTime : 0;
+				
+				// get info stored on the DB
+				String offline_db_str = getSQLRecord(cache_offline, k.getDate(), k.getId());
+				Integer offline_db = offline_db_str == null ? 0 : offline_db_str.equals("0") ? 0 : Integer.parseInt(offline_db_str);
+				if(offline_db != 0) 
+				{ onlineTime += offline_db; }
+				// Fix the online time for the rest of the day if it is the 
+				// first record.
+				else 
+				{ onlineTime += lastState.equals(Map.ENTER) ? Map.SECONDS_IN_DAY - lastEventTime : 0;}
 				List<Text> online = new ArrayList<Text>();
-				online.add(new Text(new Text(onlineTime.toString())));
+				online.add(new Text(onlineTime.toString()));
 				fv.setValues(online);
 				break;
 			}
@@ -167,16 +190,6 @@ public class ReducerImpl {
 				// if some error happened or if there is no registry in the DB.
 				return cache.get(date+id);
 			}
-		}
-		
-		/**
-		 * 
-		 * @param date
-		 * @param id
-		 * @return
-		 */
-		public String getVisitedCells(String date, String id) {
-			return null;
 		}
 	}
 }
