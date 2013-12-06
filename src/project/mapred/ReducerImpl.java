@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.MapReduceBase;
@@ -16,7 +17,10 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 
-import project.mapred.MapperImpl.Map;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
+import com.amazonaws.services.dynamodbv2.model.GetItemResult;
+
 import project.mapred.types.intermediate.IntermediateKey;
 import project.mapred.types.intermediate.IntermediateValue;
 
@@ -63,8 +67,9 @@ public class ReducerImpl {
 					lastCell = cell;
 					visited.add(value.getValues().get(0));
 				}
-				// get info stored on the DB
-				String visited_db = getSQLRecord(cache_visited, k.getDate(), k.getId());
+				// get info stored on the DB -> FIXME
+				//String visited_db = getSQLRecord(cache_visited, k.getDate(), k.getId());
+				String visited_db = getDynamoRecord(cache_visited, k.getDate(), k.getId());
 				String[] dbv = visited_db == null ? new String[0] : visited_db.split(" ");
 				ArrayList<Text> dbl = new ArrayList<Text>();
 				// Create a new list of texts
@@ -122,7 +127,7 @@ public class ReducerImpl {
 				Integer onlineTime = 0;
 				Integer lastEventTime = Integer.parseInt(fv.getValues().get(1).toString());
 				// if so, it means that the phone has been offline for the all day.
-				if(lastState.equals(Map.LEAVE))	
+				if(lastState.equals(project.mapred.MapperImpl.Map.LEAVE))	
 				{ onlineTime = lastEventTime; }
 				// reduce left events
 				for(IntermediateValue value = null; it.hasNext(); ) {
@@ -132,22 +137,23 @@ public class ReducerImpl {
 					// ignore replicated events
 					if(state.equals(lastState)) { continue; }
 					// means that in the mean while, the phone was online
-					if(state.equals(Map.LEAVE)) 
+					if(state.equals(project.mapred.MapperImpl.Map.LEAVE)) 
 					{ onlineTime += (eventTime - lastEventTime); }
 					// save last state
 					lastState = state;
 					lastEventTime = eventTime;
 				}
 				
-				// get info stored on the DB
-				String offline_db_str = getSQLRecord(cache_offline, k.getDate(), k.getId());
+				// get info stored on the DB -> FIXME
+				//String offline_db_str = getSQLRecord(cache_offline, k.getDate(), k.getId());
+				String offline_db_str = getDynamoRecord(cache_offline, k.getDate(), k.getId());
 				Integer offline_db = offline_db_str == null ? 0 : offline_db_str.equals("0") ? 0 : Integer.parseInt(offline_db_str);
 				if(offline_db != 0) 
 				{ onlineTime += offline_db; }
 				// Fix the online time for the rest of the day if it is the 
 				// first record.
 				else 
-				{ onlineTime += lastState.equals(Map.ENTER) ? Map.SECONDS_IN_DAY - lastEventTime : 0;}
+				{ onlineTime += lastState.equals(project.mapred.MapperImpl.Map.ENTER) ? project.mapred.MapperImpl.Map.SECONDS_IN_DAY - lastEventTime : 0;}
 				List<Text> online = new ArrayList<Text>();
 				online.add(new Text(onlineTime.toString()));
 				fv.setValues(online);
@@ -157,10 +163,13 @@ public class ReducerImpl {
 		}		
 	
 		/**
-		 * TODO
-		 * @param data
-		 * @param id
-		 * @return
+		 * Method to retrieve an SQL record from the database.
+		 * Note that each line is fetched at a time so that it is cached (like
+		 * prefetching).
+		 * @param cache - the cache to be used to check the value.
+		 * @param date - primary key
+		 * @param id - primary key
+		 * @return - null or the value
 		 */
 		public String getSQLRecord(HashMap<String,String> cache, String date, String id) {
 			if(cache.containsKey(date+id)) { return cache.get(date+id); }
@@ -190,6 +199,44 @@ public class ReducerImpl {
 				// if some error happened or if there is no registry in the DB.
 				return cache.get(date+id);
 			}
+		}
+		
+		/**
+		 * Method to retrieve a DynamoDB record from the database.
+		 * Note that each line is fetched at a time so that it is cached (like
+		 * prefetching).
+		 * @param cache - the cache to be used to check the value.
+		 * @param date - primary key
+		 * @param id - primary key
+		 * @return - null or the value
+		 */
+		public String getDynamoRecord(HashMap<String,String> cache, String date, String id) {
+			if(cache.containsKey(date+id)) { return cache.get(date+id); }
+			else {
+				HashMap<String, AttributeValue> key = new HashMap<String, AttributeValue>();
+				key.put("date-id", new AttributeValue().withS(date+"-"+id));
+
+				GetItemRequest getItemRequest = new GetItemRequest()
+				    .withTableName(Runner.DynamoDBOutputFormat.TABLE)
+				    .withKey(key);
+
+				GetItemResult result;
+				try {
+					result = Runner.DynamoDBOutputFormat.getDynamoDBConnection().getItem(getItemRequest);
+					Map<String, AttributeValue> map = result.getItem();
+					String number = map.get("number").getSS().toString();
+					String value = map.get("value").getSS().toString();
+					number = number.substring(1, number.length()-1);
+					value = value.substring(1, value.length()-1);
+					System.out.println(number);
+					System.out.println(value);
+					cache_offline.put(date+id, number);
+					cache_visited.put(date+id, value);
+				}
+				// if some error happened during the dynamo DB access. 
+				catch (IOException e) { e.printStackTrace(); }
+				return cache.get(date+id);
+			}	
 		}
 	}
 }

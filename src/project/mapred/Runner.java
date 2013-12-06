@@ -277,7 +277,7 @@ public class Runner {
 		private static String USER = "AKIAJSRJRTI5GRQNROMA";
 		private static String URL = "dynamodb.us-west-2.amazonaws.com";
 		private static String PASS = "q8hLa8kTNOXIacpzxi4hfj3wxUh9DzeWqb1IM15L";
-		private static String TABLE = "CN_logs";
+		public static String TABLE = "CN_logs";
 		private static AmazonDynamoDBClient conn = null;		
 		
 		/**
