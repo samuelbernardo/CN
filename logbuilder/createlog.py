@@ -1,3 +1,11 @@
+"""
+Added script to create logs. Sintaxe is as following:
+python -m py_compile createlog.py
+python createlog.pyc [<number of cells>]
+
+If there is no argument inserted, default number for cells is 100 (25MB file).
+"""
+
 import numpy as np
 import string, sys, getopt, re
 from itertools import cycle
@@ -24,8 +32,9 @@ with open("log.txt", "w") as outfile:
 			for m in range(1,12):
 				month = str(m)
 				for d in range(1,30):
-					day = str(d)
-					vals = it.next()
-					outfile.write(\
-					"C"+cell+"\t"+day+"/"+month+"/"+year+"\t"+vals[0]+"\t"+vals[1]+"\t"+"C"+cell+vals[2]+"\n"\
-					)
+					for vals in src:
+						day = str(d)
+						#vals = it.next()
+						outfile.write(\
+						"C"+cell+"\t"+day+"/"+month+"/"+year+"\t"+vals[0]+"\t"+vals[1]+"\t"+"C"+cell+vals[2]+"\n"\
+						)
