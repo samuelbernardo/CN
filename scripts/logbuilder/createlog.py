@@ -1,7 +1,9 @@
 """
 Added script to create logs. Sintaxe is as following:
 python -m py_compile createlog.py
-python createlog.pyc [<number of cells>]
+python createlog.pyc [<number of cells>] [<start cell>]
+
+<start cell> is usefull for paralelization when using multiple jobs.
 
 If there is no argument inserted, default number for cells is 100 (25MB file).
 """
@@ -17,15 +19,25 @@ with open("log_source.txt", "r") as infile:
 	for line in infile:
 		src.append(re.split('\t|\n| ',line))
 
-it = cycle(src)
+#it = cycle(src)
 
 try:
-	cell_limit = int(args[1])
+	cell_highlimit = int(args[1])
 except:
-	cell_limit = 100
+	cell_highlimit = 100
 
-with open("log.txt", "w") as outfile:
-	for c in range(1,cell_limit):
+try:
+	cell_lowlimit = int(args[2])
+except:
+	cell_lowlimit = 1
+
+try:
+	outfile_name = str(args[3])
+except:
+	outfile_name = "log.txt"
+
+with open(outfile_name, "w") as outfile:
+	for c in range(cell_lowlimit,cell_highlimit):
 		cell = str(c)
 		for y in range(1990,2013):
 			year = str(y)
