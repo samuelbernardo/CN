@@ -36,5 +36,5 @@ with open("log.txt", "w") as outfile:
 						day = str(d)
 						#vals = it.next()
 						outfile.write(\
-						"C"+cell+"\t"+day+"/"+month+"/"+year+"\t"+vals[0]+"\t"+vals[1]+"\t"+"C"+cell+vals[2]+"\n"\
+						"C"+cell+","+day+"/"+month+"/"+year+","+vals[0]+","+vals[1]+","+"C"+cell+vals[2]+"\n"\
 						)
