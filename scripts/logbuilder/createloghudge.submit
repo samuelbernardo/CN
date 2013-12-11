@@ -1,0 +1,41 @@
+###########################################
+# Submit multiple instances of logcreator #
+###########################################                                 
+
+executable     = /usr/bin/python
+universe       = vanilla
+
+output         = outputs/createlog.out
+error          = outputs/createlog.error
+log            = outputs/createlog.log
+request_cpus   = 4
+
+arguments      = createlog.pyc 100 1 log1.txt
+queue
+
+arguments      = createlog.pyc 200 101 log2.txt
+queue
+
+arguments      = createlog.pyc 300 201 log3.txt
+queue
+
+arguments      = createlog.pyc 400 301 log4.txt
+queue
+
+arguments      = createlog.pyc 500 401 log5.txt
+queue
+
+arguments      = createlog.pyc 600 501 log6.txt
+queue
+
+arguments      = createlog.pyc 700 601 log7.txt
+queue
+
+arguments      = createlog.pyc 800 701 log8.txt
+queue
+
+arguments      = createlog.pyc 900 801 log9.txt
+queue
+
+arguments      = createlog.pyc 1000 901 log10.txt
+queue
