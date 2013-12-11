@@ -67,9 +67,9 @@ public class ReducerImpl {
 					lastCell = cell;
 					visited.add(value.getValues().get(0));
 				}
-				// get info stored on the DB -> FIXME
-				//String visited_db = getSQLRecord(cache_visited, k.getDate(), k.getId());
-				String visited_db = getDynamoRecord(cache_visited, k.getDate(), k.getId());
+				String visited_db = null;
+				//visited_db = getSQLRecord(cache_visited, k.getDate(), k.getId());
+				//visited_db = getDynamoRecord(cache_visited, k.getDate(), k.getId());
 				String[] dbv = visited_db == null ? new String[0] : visited_db.split(" ");
 				ArrayList<Text> dbl = new ArrayList<Text>();
 				// Create a new list of texts
@@ -144,9 +144,9 @@ public class ReducerImpl {
 					lastEventTime = eventTime;
 				}
 				
-				// get info stored on the DB -> FIXME
-				//String offline_db_str = getSQLRecord(cache_offline, k.getDate(), k.getId());
-				String offline_db_str = getDynamoRecord(cache_offline, k.getDate(), k.getId());
+				String offline_db_str = null;
+				//offline_db_str = getSQLRecord(cache_offline, k.getDate(), k.getId());
+				//offline_db_str = getDynamoRecord(cache_offline, k.getDate(), k.getId());
 				Integer offline_db = offline_db_str == null ? 0 : offline_db_str.equals("0") ? 0 : Integer.parseInt(offline_db_str);
 				if(offline_db != 0) 
 				{ onlineTime += offline_db; }

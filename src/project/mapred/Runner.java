@@ -39,7 +39,13 @@ import project.mapred.types.intermediate.*;
  */
 public class Runner {
 
-
+	
+	public static final int OUTPUT_LOCAL = 0;
+	public static final int OUTPUT_SQL = 1;
+	public static final int OUTPUT_DYNAMO = 2;
+	public static final int OUTPUT_MODE = OUTPUT_LOCAL;
+	
+	
 	/**
 	 * Constants. 
 	 * Note: this constants are integer because we need their string
@@ -403,9 +409,18 @@ public class Runner {
 		conf.setReducerClass(ReducerImpl.Reduce.class);
 
 		conf.setInputFormat(TextInputFormat.class);
-		//conf.setOutputFormat(TextOutputFormat.class);
-		//conf.setOutputFormat(SQLOutputFormat.class);
-		conf.setOutputFormat(DynamoDBOutputFormat.class);
+		
+		switch(Runner.OUTPUT_MODE) { 
+		case Runner.OUTPUT_LOCAL:
+			conf.setOutputFormat(TextOutputFormat.class);
+			break;
+		case Runner.OUTPUT_SQL: 
+			conf.setOutputFormat(SQLOutputFormat.class);
+			break;
+		case Runner.OUTPUT_DYNAMO:
+			conf.setOutputFormat(DynamoDBOutputFormat.class);
+			break;
+		}
 		
 		FileInputFormat.setInputPaths(conf, new Path(args[0]));
 		FileOutputFormat.setOutputPath(conf, new Path(args[1]));
