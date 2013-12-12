@@ -196,43 +196,43 @@
 			todir="${username}:${password}@${server}:~/"/>
 		<antcall target="executeHadoopCommand">
 			<param name="command"
-				value="jar ~/${final.name}.jar ${workspace.input.dir}/test2 ${hdfs_base_dir}/output" />
+				value="jar ~/${final.name}.jar ${workspace.input.dir}/test2 ${hdfs_base_dir}/output2" />
 		</antcall>
 		<antcall target="executeHadoopCommand">
 			<param name="command"
-				value="jar ~/${final.name}.jar ${workspace.input.dir}/test4 ${hdfs_base_dir}/output" />
+				value="jar ~/${final.name}.jar ${workspace.input.dir}/test4 ${hdfs_base_dir}/output4" />
 		</antcall>
 		<antcall target="executeHadoopCommand">
 			<param name="command"
-				value="jar ~/${final.name}.jar ${workspace.input.dir}/test8 ${hdfs_base_dir}/output" />
+				value="jar ~/${final.name}.jar ${workspace.input.dir}/test8 ${hdfs_base_dir}/output8" />
 		</antcall>
 		<antcall target="executeHadoopCommand">
 			<param name="command"
-				value="jar ~/${final.name}.jar ${workspace.input.dir}/test16 ${hdfs_base_dir}/output" />
+				value="jar ~/${final.name}.jar ${workspace.input.dir}/test16 ${hdfs_base_dir}/output16" />
 		</antcall>
 		<antcall target="executeHadoopCommand">
 			<param name="command"
-				value="jar ~/${final.name}.jar ${workspace.input.dir}/test32 ${hdfs_base_dir}/output" />
+				value="jar ~/${final.name}.jar ${workspace.input.dir}/test32 ${hdfs_base_dir}/output32" />
 		</antcall>
 		<antcall target="executeHadoopCommand">
 			<param name="command"
-				value="jar ~/${final.name}.jar ${workspace.input.dir}/test64 ${hdfs_base_dir}/output" />
+				value="jar ~/${final.name}.jar ${workspace.input.dir}/test64 ${hdfs_base_dir}/output64" />
 		</antcall>
 		<antcall target="executeHadoopCommand">
 			<param name="command"
-				value="jar ~/${final.name}.jar ${workspace.input.dir}/test128 ${hdfs_base_dir}/output" />
+				value="jar ~/${final.name}.jar ${workspace.input.dir}/test128 ${hdfs_base_dir}/output128" />
 		</antcall>
 		<antcall target="executeHadoopCommand">
 			<param name="command"
-				value="jar ~/${final.name}.jar ${workspace.input.dir}/test256 ${hdfs_base_dir}/output" />
+				value="jar ~/${final.name}.jar ${workspace.input.dir}/test256 ${hdfs_base_dir}/output256" />
 		</antcall>
 		<antcall target="executeHadoopCommand">
 			<param name="command"
-				value="jar ~/${final.name}.jar ${workspace.input.dir}/test512 ${hdfs_base_dir}/output" />
+				value="jar ~/${final.name}.jar ${workspace.input.dir}/test512 ${hdfs_base_dir}/output512" />
 		</antcall>
 		<antcall target="executeHadoopCommand">
 			<param name="command"
-				value="jar ~/${final.name}.jar ${workspace.input.dir}/test1024 ${hdfs_base_dir}/output" />
+				value="jar ~/${final.name}.jar ${workspace.input.dir}/test1024 ${hdfs_base_dir}/output1024" />
 		</antcall>
 	</target>
 	
