@@ -30,8 +30,6 @@ import com.amazonaws.services.dynamodbv2.model.AttributeValueUpdate;
 import com.amazonaws.services.dynamodbv2.model.ReturnValue;
 import com.amazonaws.services.dynamodbv2.model.UpdateItemRequest;
 import com.amazonaws.services.dynamodbv2.model.UpdateItemResult;
-import com.amazonaws.services.elasticmapreduce.util.BootstrapActions.Daemon;
-
 import project.mapred.types.intermediate.*;
 
 /**
@@ -39,13 +37,6 @@ import project.mapred.types.intermediate.*;
  */
 public class Runner {
 
-	
-	public static final int OUTPUT_LOCAL = 0;
-	public static final int OUTPUT_SQL = 1;
-	public static final int OUTPUT_DYNAMO = 2;
-	public static final int OUTPUT_MODE = OUTPUT_LOCAL;
-	
-	
 	/**
 	 * Constants. 
 	 * Note: this constants are integer because we need their string
@@ -410,17 +401,9 @@ public class Runner {
 
 		conf.setInputFormat(TextInputFormat.class);
 		
-		switch(Runner.OUTPUT_MODE) { 
-		case Runner.OUTPUT_LOCAL:
-			conf.setOutputFormat(TextOutputFormat.class);
-			break;
-		case Runner.OUTPUT_SQL: 
-			conf.setOutputFormat(SQLOutputFormat.class);
-			break;
-		case Runner.OUTPUT_DYNAMO:
-			conf.setOutputFormat(DynamoDBOutputFormat.class);
-			break;
-		}
+		conf.setOutputFormat(TextOutputFormat.class); 
+		//conf.setOutputFormat(SQLOutputFormat.class);
+		//conf.setOutputFormat(DynamoDBOutputFormat.class);
 		
 		FileInputFormat.setInputPaths(conf, new Path(args[0]));
 		FileOutputFormat.setOutputPath(conf, new Path(args[1]));
