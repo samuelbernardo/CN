@@ -94,7 +94,7 @@ Given the fact just presented, our implementation is very simple:
 \end{itemize}
 
 Another interesting feature that we used was secondary sorting. Secondary sorting enables us to perform value sorting and get all the values for the same key in order. This saves a lot of effort in the reducer since all the events are grouped and all the values inside each group are ordered.
-
+%TO DO: combiner reduces the amount of requests
 Our final implementation is prepared to work in the RNL Hadoop installation and is able to produce output for three output storage systems: local, postgreSQL and Amazon DynamoDB. 
 
 \section{Web Site}
@@ -250,11 +250,48 @@ The big challenge here is to be able to grow and decrease the number of worker m
 
 After some experiments, we noted that the most significant factor is the CPU usage percentage. This is the only information available that we believe that truly explains the high load on the servers. As that being we placed two scaling policies and two alarms that are triggered. The fist policy adds one instance if the average CPU utilization (from the auto scaling group) is bigger than 35\% for more than one minute and another to remove a machine if the average CPU utilization is lower than 10\% for more than one minute. The time between scaling activities is 30 seconds.
 
-Our scaling policies react very fast and try to add as soon as possible more machines. Although it can be a waste of resources for ephemeral waves of requests we decided to leave it like this for safety (this way we assure that we will loose less requests). For the health status we used 60 seconds intervall with an healthy threshold of 2 and an unhealthy threshold of 4 (to avoid loosing machines that are just too busy to respond). 
+Our scaling policies react very fast and try to add as soon as possible more machines. Although it can be a waste of resources for ephemeral waves of requests we decided to leave it like this for safety (this way we assure that we will loose less requests). For the health status we used 60 seconds interval with an healthy threshold of 2 and an unhealthy threshold of 4 (to avoid loosing machines that are just too busy to respond). 
 
 \section{Evaluation and Plots}
 % micro instance, siege tests, httpd,php
+For obtaining a good evaluation of 
 
+
+\begin{figure}[H]
+      \centering
+      \includegraphics[scale = 0.40]{test1}
+      \caption{First straight test of the load balancer website}
+      \label{load_balancer_test1}
+\end{figure}
+\begin{figure}[H]
+      \centering
+      \includegraphics[scale = 0.40]{test2}
+      \caption{Second straight test of the load balancer website}
+      \label{load_balancer_test2}
+\end{figure}
+\begin{figure}[H]
+      \centering
+      \includegraphics[scale = 0.40]{test3}
+      \caption{Third straight test of the load balancer website}
+      \label{load_balancer_test3}
+\end{figure}
+\begin{figure}[H]
+      \centering
+      \includegraphics[scale = 0.40]{test4}
+      \caption{Fourth straight test of the load balancer website}
+      \label{load_balancer_test4}
+\end{figure}
+\begin{table}[htbp!]
+\begin{center}
+\caption{Map Reduce Test}
+\begin{tabular}{*{7}{|l}|}
+\hline
+ $L$ & 2 & 3 & 4 & 5 & 7 \\ \hline
+ $L$ & 2 & 3 & 4 & 5 & 7 \\ \hline
+\end{tabular}
+\end{center}
+\label{map_reduce_test}
+\end{table}
 \section{Conclusion}
 \end{document}
 
