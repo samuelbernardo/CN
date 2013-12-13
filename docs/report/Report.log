@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-1.40.10 (TeX Live 2009/Debian) (format=pdflatex 2013.11.7)  12 DEC 2013 16:22
+This is pdfTeX, Version 3.1415926-1.40.10 (TeX Live 2009/Debian) (format=pdflatex 2013.11.7)  13 DEC 2013 20:01
 entering extended mode
  %&-line parsing enabled.
 **Report.tex
@@ -707,7 +707,7 @@ LaTeX Info: Redefining \pageref on input line 52.
 
 pdfTeX warning: /usr/bin/pdflatex (file ./Images/Logo_IST.pdf): PDF inclusion: 
 found PDF version <1.5>, but at most version <1.4> allowed
-<./Images/Logo_IST.pdf, id=75, 674.50775pt x 155.79807pt>
+<./Images/Logo_IST.pdf, id=35, 674.50775pt x 155.79807pt>
 File: ./Images/Logo_IST.pdf Graphic file (type pdf)
 
 <use ./Images/Logo_IST.pdf>) [1
@@ -721,33 +721,72 @@ File: ./Images/Logo_IST.pdf Graphic file (type pdf)
  [2
 
 ]
-<./Images/webInterface.png, id=118, 756.8275pt x 363.3575pt>
+LaTeX Font Info:    Try loading font information for OMS+cmr on input line 81.
+
+(/usr/share/texmf-texlive/tex/latex/base/omscmr.fd
+File: omscmr.fd 1999/05/25 v2.5h Standard LaTeX font definitions
+)
+LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <10> not available
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 81.
+ [3]
+<./Images/webInterface.png, id=74, 756.8275pt x 363.3575pt>
 File: ./Images/webInterface.png Graphic file (type png)
 
-<use ./Images/webInterface.png> [3]
-<./Images/phpPage.png, id=129, 757.83125pt x 434.62375pt>
+<use ./Images/webInterface.png> [4]
+<./Images/phpPage.png, id=85, 757.83125pt x 434.62375pt>
 File: ./Images/phpPage.png Graphic file (type png)
 
-<use ./Images/phpPage.png> [4 <./Images/webInterface.png>] [5 <./Images/phpPage
-.png>] [6] [7] (./Report.aux (./Head.aux)) ) 
+<use ./Images/phpPage.png> [5 <./Images/webInterface.png>] [6 <./Images/phpPage
+.png>] [7] <./Images/test1.png, id=104, 728.7225pt x 1510.64375pt>
+File: ./Images/test1.png Graphic file (type png)
+
+<use ./Images/test1.png> <./Images/test2.png, id=105, 735.7086pt x 1669.437pt>
+File: ./Images/test2.png Graphic file (type png)
+
+<use ./Images/test2.png> [8]
+Overfull \vbox (69.77023pt too high) has occurred while \output is active []
+
+
+[9 <./Images/test1.png (PNG copy)>]
+<./Images/test3.png, id=115, 737.154pt x 1669.437pt>
+File: ./Images/test3.png Graphic file (type png)
+ <use ./Images/test3.png>
+Overfull \vbox (133.28642pt too high) has occurred while \output is active []
+
+
+[10 <./Images/test2.png (PNG copy)>]
+<./Images/test4.png, id=121, 736.4313pt x 1608.7302pt>
+File: ./Images/test4.png Graphic file (type png)
+
+<use ./Images/test4.png>
+Overfull \vbox (133.28642pt too high) has occurred while \output is active []
+
+
+[11 <./Images/test3.png>]
+Overfull \vbox (109.00412pt too high) has occurred while \output is active []
+
+
+[12 <./Images/test4.png>] [13] (./Report.aux (./Head.aux)) ) 
 Here is how much of TeX's memory you used:
- 8968 strings out of 493848
- 130441 string characters out of 1152823
+ 9002 strings out of 493848
+ 131071 string characters out of 1152823
  227593 words of memory out of 3000000
- 12044 multiletter control sequences out of 15000+50000
+ 12070 multiletter control sequences out of 15000+50000
  6546 words of font info for 25 fonts, out of 3000000 for 9000
  714 hyphenation exceptions out of 8191
- 41i,13n,43p,280b,456s stack positions out of 5000i,500n,10000p,200000b,50000s
-</usr/share/texmf-texlive/fonts/typ
-e1/public/amsfonts/cm/cmbx10.pfb></usr/share/texmf-texlive/fonts/type1/public/a
-msfonts/cm/cmbx12.pfb></usr/share/texmf-texlive/fonts/type1/public/amsfonts/cm/
-cmr10.pfb></usr/share/texmf-texlive/fonts/type1/public/amsfonts/cm/cmr12.pfb></
-usr/share/texmf-texlive/fonts/type1/public/amsfonts/cm/cmr17.pfb></usr/share/te
-xmf-texlive/fonts/type1/public/amsfonts/cm/cmtt10.pfb></usr/share/texmf-texlive
-/fonts/type1/public/amsfonts/cm/cmtt8.pfb>
-Output written on Report.pdf (7 pages, 210137 bytes).
+ 41i,13n,43p,591b,456s stack positions out of 5000i,500n,10000p,200000b,50000s
+</usr/share/texmf-t
+exlive/fonts/type1/public/amsfonts/cm/cmbx10.pfb></usr/share/texmf-texlive/font
+s/type1/public/amsfonts/cm/cmbx12.pfb></usr/share/texmf-texlive/fonts/type1/pub
+lic/amsfonts/cm/cmmi10.pfb></usr/share/texmf-texlive/fonts/type1/public/amsfont
+s/cm/cmr10.pfb></usr/share/texmf-texlive/fonts/type1/public/amsfonts/cm/cmr12.p
+fb></usr/share/texmf-texlive/fonts/type1/public/amsfonts/cm/cmr17.pfb></usr/sha
+re/texmf-texlive/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/share/texmf-te
+xlive/fonts/type1/public/amsfonts/cm/cmtt10.pfb></usr/share/texmf-texlive/fonts
+/type1/public/amsfonts/cm/cmtt8.pfb>
+Output written on Report.pdf (13 pages, 1052483 bytes).
 PDF statistics:
- 185 PDF objects out of 1000 (max. 8388607)
- 31 named destinations out of 1000 (max. 500000)
- 160 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 179 PDF objects out of 1000 (max. 8388607)
+ 32 named destinations out of 1000 (max. 500000)
+ 100 words of extra memory for PDF output out of 10000 (max. 10000000)
 
