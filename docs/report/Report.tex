@@ -283,13 +283,18 @@ For obtaining a good evaluation of
 \end{figure}
 \begin{table}[htbp!]
 \begin{center}
-\caption{Map Reduce Test}
+\caption{Map Reduce Test: writing to a file}
 \begin{tabular}{*{7}{|l}|}
 \hline
  $Test Sample (cells)$ & Map Input (records) & Combine Input (records) & Reduce Input (records) & Reduce Output (records) & Time (s) \\ \hline
 $2$ & 40.500 & 43.740 & 17.012 & 12.150 & 18 \\ \hline
 $4$ & 121.500 & 131.220 & 51.032 & 36.450 & 19 \\ \hline
 $8$ & 283.500 & 306.180 & 119.072 & 85.050 & 21 \\ \hline
+$16$ & 607.500 & 656.100 & 255.151 & 255.151 & 25 \\ \hline
+$32$ & 1.255.500 & 1.355.940 & 527.314 & 376.650 & 34 \\ \hline
+$64$ & 2.551.500 & 3.827.256 & 1.071.636 & 765.450 & 52 \\ \hline
+$128$ & 5.143.500 & 7.715.265 & 2.160.285 & 1.543.050 & 113 \\ \hline
+$256$ & 10.327.500 & 15.491.283 & 4.337.583 & 3.098.250 & 161 \\ \hline
 \end{tabular}
 \end{center}
 \label{map_reduce_test}
