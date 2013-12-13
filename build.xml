@@ -142,6 +142,18 @@
 		</exec>-->
 	</target>
 	
+	<target name="clean-db">
+       <sql driver="org.postgresql.Driver"
+            classpath="./lib/postgresql-9.3-1100.jdbc4.jar"
+            url="jdbc:postgresql://db.ist.utl.pt:5432/ist167074"
+            userid="ist167074"
+            password="eE92Hb41w"
+            autocommit="true">
+
+         DELETE FROM logs *;
+       </sql>
+    </target>
+	
 	<target name="clean-all" depends="clean, clean-hdfs" description="Cleans all generated files for the project">
 	</target>
   
@@ -186,11 +198,105 @@
 			todir="${username}:${password}@${server}:~/"/>
 		<antcall target="executeHadoopCommand">
 			<param name="command"
-				value="jar ~/${final.name}.jar ${workspace.input.dir}/test2 ${hdfs_base_dir}/output" />
+				value="jar ~/${final.name}.jar ${workspace.input.dir}/input ${hdfs_base_dir}/output" />
 		</antcall>
 	</target>
+	
+	<target name="run2" depends="jar, clean-db" description="Runs the project">
+		<scp 
+			file="${build.dir}/${final.name}.jar" 
+			todir="${username}:${password}@${server}:~/"/>
+		<antcall target="executeHadoopCommand">
+			<param name="command"
+				value="jar ~/${final.name}.jar ${workspace.input.dir}/test2 ${hdfs_base_dir}/output2" />
+		</antcall>
+	</target>
+	
+	<target name="run4" depends="jar, clean-db" description="Runs the project">
+		<scp 
+			file="${build.dir}/${final.name}.jar" 
+			todir="${username}:${password}@${server}:~/"/>
+		<antcall target="executeHadoopCommand">
+			<param name="command"
+				value="jar ~/${final.name}.jar ${workspace.input.dir}/test4 ${hdfs_base_dir}/output4" />
+		</antcall>
+	</target>
+	
+	<target name="run8" depends="jar, clean-db" description="Runs the project">
+		<scp 
+			file="${build.dir}/${final.name}.jar" 
+			todir="${username}:${password}@${server}:~/"/>
+		<antcall target="executeHadoopCommand">
+			<param name="command"
+				value="jar ~/${final.name}.jar ${workspace.input.dir}/test8 ${hdfs_base_dir}/output8" />
+		</antcall>
+	</target>
+	
+	<target name="run16" depends="jar, clean-db" description="Runs the project">
+		<scp 
+			file="${build.dir}/${final.name}.jar" 
+			todir="${username}:${password}@${server}:~/"/>
+		<antcall target="executeHadoopCommand">
+			<param name="command"
+				value="jar ~/${final.name}.jar ${workspace.input.dir}/test16 ${hdfs_base_dir}/output16" />
+		</antcall>
+	</target>
+	
+	<target name="run32" depends="jar, clean-db" description="Runs the project">
+		<scp 
+			file="${build.dir}/${final.name}.jar" 
+			todir="${username}:${password}@${server}:~/"/>
+		<antcall target="executeHadoopCommand">
+			<param name="command"
+				value="jar ~/${final.name}.jar ${workspace.input.dir}/test32 ${hdfs_base_dir}/output32" />
+		</antcall>
+	</target>
+	
+	<target name="run64" depends="jar, clean-db" description="Runs the project">
+		<scp 
+			file="${build.dir}/${final.name}.jar" 
+			todir="${username}:${password}@${server}:~/"/>
+		<antcall target="executeHadoopCommand">
+			<param name="command"
+				value="jar ~/${final.name}.jar ${workspace.input.dir}/test64 ${hdfs_base_dir}/output64" />
+		</antcall>
+	</target>
+	
+	<target name="run128" depends="jar, clean-db" description="Runs the project">
+		<scp 
+			file="${build.dir}/${final.name}.jar" 
+			todir="${username}:${password}@${server}:~/"/>
+		<antcall target="executeHadoopCommand">
+			<param name="command"
+				value="jar ~/${final.name}.jar ${workspace.input.dir}/test128 ${hdfs_base_dir}/output128" />
+		</antcall>
+	</target>
+	
+	<target name="run256" depends="jar, clean-db" description="Runs the project">
+		<scp 
+			file="${build.dir}/${final.name}.jar" 
+			todir="${username}:${password}@${server}:~/"/>
+		<antcall target="executeHadoopCommand">
+			<param name="command"
+				value="jar ~/${final.name}.jar ${workspace.input.dir}/test256 ${hdfs_base_dir}/output256" />
+		</antcall>
+	</target>
+	
+	<target name="run512" depends="jar, clean-db" description="Runs the project">
+		<scp 
+			file="${build.dir}/${final.name}.jar" 
+			todir="${username}:${password}@${server}:~/"/>
+		<antcall target="executeHadoopCommand">
+			<param name="command"
+				value="jar ~/${final.name}.jar ${workspace.input.dir}/test512 ${hdfs_base_dir}/output512" />
+		</antcall>
+	</target>
+	
+	<target name="run-all"
+		depends="run2, run4, run8, run16, run32, run64, run128, run256, run512"
+		description="Runs the project with all cases"/>
 
-	<target name="run-all" depends="jar" description="Runs the project with all cases">
+	<target name="run-all-local" depends="jar" description="Runs the project with all cases">
 		<scp 
 			file="${build.dir}/${final.name}.jar" 
 			todir="${username}:${password}@${server}:~/"/>
@@ -229,10 +335,6 @@
 		<antcall target="executeHadoopCommand">
 			<param name="command"
 				value="jar ~/${final.name}.jar ${workspace.input.dir}/test512 ${hdfs_base_dir}/output512" />
-		</antcall>
-		<antcall target="executeHadoopCommand">
-			<param name="command"
-				value="jar ~/${final.name}.jar ${workspace.input.dir}/test1024 ${hdfs_base_dir}/output1024" />
 		</antcall>
 	</target>
 	

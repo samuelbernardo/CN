@@ -62,12 +62,14 @@ public class MapperImpl {
 				OutputCollector<IntermediateKey, IntermediateValue> output, 
 				Reporter reporter) throws IOException {
 
+			//try {
 			String[] line = value.toString().trim().split(",");
-			String 	cell = line[0], 
-					date = line[1], 
+			String  cell = line[0],
+					date = line[1],
 					time = line[2],
-					event = line[3], 
+					event = line[3],
 					phone = event.equals("0") ? null : line[4];
+			
 			List<Text> list = new ArrayList<Text>();
 			int nSecs = -1;
 
@@ -89,6 +91,9 @@ public class MapperImpl {
 						new IntermediateValue(list));
 				break;
 			case PHONE_JOINS_CELL:
+				/*System.out.print("Mapper line:");
+				for(String txt : line) System.out.print(" "+txt);
+				System.out.print("\n");*/
 				// PRESENT_PHONES
 				list.add(new Text(time));
 				list.add(new Text(Map.ENTER + phone)); 
@@ -105,6 +110,9 @@ public class MapperImpl {
 				output.collect(new IntermediateKey(VISITED_CELLS, date, time, phone), new IntermediateValue(list));
 				break;
 			case PHONE_LEAVES_CELL:
+				/*System.out.print("Mapper line:");
+				for(String txt : line) System.out.print(" "+txt);
+				System.out.print("\n");*/
 				// PRESENT_PHONES
 				list.add(new Text(time));
 				list.add(new Text(Map.LEAVE + phone));
@@ -126,6 +134,9 @@ public class MapperImpl {
 			case PHONE_INIT_CALL:
 			case PHONE_TERM_CALL:
 			case PHONE_PINGS_CELL:
+				/*System.out.print("Mapper line:");
+				for(String txt : line) System.out.print(" "+txt);
+				System.out.print("\n");*/
 				// PRESENT_PHONES
 				list.add(new Text(time));
 				list.add(new Text(Map.LEAVE + phone));
@@ -145,6 +156,12 @@ public class MapperImpl {
 				}
 				break;
 			}
+			/*}
+			catch(Exception e) {
+				System.out.println("Mapper value: "+value);
+				System.out.println("Exception catched: "+e);
+			}*/
+			
 		}
 
 		/**

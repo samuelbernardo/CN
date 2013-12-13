@@ -67,4 +67,6 @@ public class IntermediateKey extends Text {
 	public String getId() 	{ return this.id; }
 	public String getQueryDateId() { return new String(this.getQuery()+";"+this.getDate()+";"+this.getId()); }
 	public String getQuery() { return this.query; }
+
+	
 }

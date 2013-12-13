@@ -37,7 +37,7 @@ except:
 	outfile_name = "log.txt"
 
 with open(outfile_name, "w") as outfile:
-	for c in range(cell_lowlimit,cell_highlimit):
+	for c in range(cell_lowlimit,cell_highlimit+1):
 		cell = str(c)
 		for y in range(1990,2013):
 			year = str(y)

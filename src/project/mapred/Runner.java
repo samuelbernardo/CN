@@ -405,6 +405,8 @@ public class Runner {
 		//conf.setOutputFormat(SQLOutputFormat.class);
 		//conf.setOutputFormat(DynamoDBOutputFormat.class);
 		
+		conf.setNumMapTasks(4);
+		
 		FileInputFormat.setInputPaths(conf, new Path(args[0]));
 		FileOutputFormat.setOutputPath(conf, new Path(args[1]));
 		JobClient.runJob(conf);

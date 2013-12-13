@@ -1,6 +1,9 @@
 build/
 input/
 *.class
+.~*
+*~
+.metadata
 
 # Package Files #
 *.jar

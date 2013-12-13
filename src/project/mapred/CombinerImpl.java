@@ -41,11 +41,17 @@ public class CombinerImpl {
 			case Runner.VISITED_CELLS:
 				break;
 			case Runner.PRESENT_PHONES:
+				//try {
+					/*System.out.println("Combiner IntermediateValue: "+fv);
+					System.out.println("Combiner IntermediateKey: "+k);*/
 				String firstEventTime = fv.getValues().get(0).toString();
+				/*System.out.println("Combiner firstEventTime: "+firstEventTime);*/
+				if(!firstEventTime.contains(":")) break;
 				List<Text> phones = new ArrayList<Text>();
 				phones.add(fv.getValues().get(1));
 				for(IntermediateValue value = null; it.hasNext(); ) {
 					value = it.next();
+					if(!value.getValues().get(0).toString().contains(":")) continue;
 					Text phone = value.getValues().get(1);
 					// if contains, nothing to do.
 					if(phones.contains(phone)) { continue; }
@@ -64,6 +70,18 @@ public class CombinerImpl {
 				// prepare pair to be collected.
 				k = new IntermediateKey(k.getQuery(), k.getDate(), firstEventTime, k.getId());
 				fv.setValues(phones);
+				/*}
+				
+				catch(IndexOutOfBoundsException e) {
+					System.out.println("Phones: "+fv.getValues());
+					System.out.println("IntermediateValue: "+fv);
+					System.out.println("IntermediateKey: "+k);
+					System.out.println("IndexOutOfBoundsException catched: "+e);
+				}
+				catch(Exception e) {
+					System.out.println("Phones: "+fv.getValues());
+					System.out.println("Exception catched: "+e);
+				}*/
 				break;
 			case Runner.OFFLINE_TIME:
 				// TODO: read database id=k.getId(), data=k.getDate() ->number
