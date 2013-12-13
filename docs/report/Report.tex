@@ -254,8 +254,55 @@ Our scaling policies react very fast and try to add as soon as possible more mac
 
 \section{Evaluation and Plots}
 % micro instance, siege tests, httpd,php
-For obtaining a good evaluation of 
+We dedicate this section to testing and evaluating our project. We start with some performance evaluation on our MapReduce application and then we move to the AWS load balancing and auto scaling mechanisms.  
 
+\subsection{MapReduce}
+
+For evaluation purposes we created big logs for stressing our application. Our application was run for multiple time with different log sizes and for different storages: HDFS and SQL DB. For identifying each test sample we use the number of cells (the number of days ans phones is constant for each cell). For tests with more than 8 cells we decided not to run them on the SQL DB since it was taking too long and could be considered Denial of Service.
+
+By analyzing the table, we can two facts:
+
+\begin{itemize}
+\item the overhead of running MapReduce targeting remote storage is overwhelming;
+\item the gains for using the combiner are huge (we are able to reduce almost 2/3 of the records).
+\end{itemize}
+
+\begin{table}[htbp!]
+\begin{center}
+\caption{Map Reduce Performance Results}
+\begin{tabular}{| p{2cm} | p{2cm} | p{2cm} | p{2cm}| p{2cm} | p{2cm} | p{2cm} |}
+\hline
+Test Sample (cells) & Map Input (records) & Combine Input (records) & Reduce Input (records) & Reduce Output (records) & Time HDFS (s) & Time SQL (s)\\ \hline
+2 & 40.500 & 43.740 & 17.012 & 12.150 & 18 & 285 \\ \hline
+4 & 121.500 & 131.220 & 51.032 & 36.450 & 19 & 775 \\ \hline
+8 & 283.500 & 306.180 & 119.072 & 85.050 & 21 & 1737 \\ \hline
+16 & 607.500 & 656.100 & 255.151 & 255.151 & 25 & - \\ \hline
+32 & 1.255.500 & 1.355.940 & 527.314 & 376.650 & 34 & -\\ \hline
+64 & 2.551.500 & 3.827.256 & 1.071.636 & 765.450 & 52  & -\\ \hline
+128 & 5.143.500 & 7.715.265 & 2.160.285 & 1.543.050 & 113 & -\\ \hline
+256 & 10.327.500 & 15.491.283 & 4.337.583 & 3.098.250 & 161 & -\\ \hline
+\end{tabular}
+\end{center}
+\label{map_reduce_test}
+\end{table}
+
+\section{Load Balancing and Auto Scaling}
+
+Regarding the evaluation of the load balancing and auto scaling it is important to note that: 1) we used the siege tool to stress the web site; 2) only micro instances were used; 3) the minimum number of instances was 5; 4) we used a very basic disk image and only added the php and httpd.
+
+\begin{table}[htbp!]
+\begin{center}
+\caption{Stressing Results for the First Test}
+\begin{tabular}{| l | l | l | l | l | }
+\hline
+Test & Transactions & Availability (percentage) & Time (s) & Avg. Response Time (s) \\ \hline
+First & 15945 & 99.81 & 1199.7 & 0.49 \\ \hline
+Second & 7978 & 99.86 & 1199.96 & 0.49 \\ \hline
+Third & 4028 & 99.90 & 1199.80 & 0.49 \\ \hline
+\end{tabular}
+\end{center}
+\label{map_reduce_test}
+\end{table}
 
 \begin{figure}[H]
       \centering
@@ -281,24 +328,7 @@ For obtaining a good evaluation of
       \caption{Fourth straight test of the load balancer website}
       \label{load_balancer_test4}
 \end{figure}
-\begin{table}[htbp!]
-\begin{center}
-\caption{Map Reduce Test: writing to a file}
-\begin{tabular}{*{7}{|l}|}
-\hline
- $Test Sample (cells)$ & Map Input (records) & Combine Input (records) & Reduce Input (records) & Reduce Output (records) & Time (s) \\ \hline
-$2$ & 40.500 & 43.740 & 17.012 & 12.150 & 18 \\ \hline
-$4$ & 121.500 & 131.220 & 51.032 & 36.450 & 19 \\ \hline
-$8$ & 283.500 & 306.180 & 119.072 & 85.050 & 21 \\ \hline
-$16$ & 607.500 & 656.100 & 255.151 & 255.151 & 25 \\ \hline
-$32$ & 1.255.500 & 1.355.940 & 527.314 & 376.650 & 34 \\ \hline
-$64$ & 2.551.500 & 3.827.256 & 1.071.636 & 765.450 & 52 \\ \hline
-$128$ & 5.143.500 & 7.715.265 & 2.160.285 & 1.543.050 & 113 \\ \hline
-$256$ & 10.327.500 & 15.491.283 & 4.337.583 & 3.098.250 & 161 \\ \hline
-\end{tabular}
-\end{center}
-\label{map_reduce_test}
-\end{table}
+
 \section{Conclusion}
 \end{document}
 
