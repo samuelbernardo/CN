@@ -1,0 +1,259 @@
+\documentclass{article}
+
+
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage[pdftex]{graphicx}
+\usepackage{epstopdf}
+\usepackage{pdfpages}
+\usepackage{float}
+\usepackage{amsmath}
+%\usepackage{subfig} % entra em conflito com subcaption
+\usepackage{geometry}
+\usepackage{fancyhdr}
+%\usepackage{newclude}
+\usepackage{comment}
+%\usepackage{units} %nicefrac
+\usepackage{color} %white, black, red, green, blue, cyan, magenta, yellow.
+\usepackage{multirow}
+%\usepackage{ dsfont } % para o símbolo de números Reais
+\usepackage[justification=centering]{caption}
+\usepackage{subcaption} %para subfigures
+%\usepackage{wrapfig}
+
+\interfootnotelinepenalty=10000
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{setspace}
+\usepackage{parskip}
+
+%\bibliographystyle{plain}
+\bibliographystyle{ieeetr}
+\graphicspath{{./Imagens/}}
+
+%FOR ALLOW STACKING ON THE RIGHT VERTICAL BAR
+\makeatletter
+\renewenvironment{subarray}[2][c]{%
+  \if#1c\vcenter\else\vbox\fi\bgroup
+  \Let@ \restore@math@cr \default@tag
+  \baselineskip\fontdimen10 \thyristoriptfont\tw@
+  \advance\baselineskip\fontdimen12 \thyristoriptfont\tw@
+  \lineskip\thr@@\fontdimen8 \thyristoriptfont\thr@@
+  \lineskiplimit\lineskip
+  \ialign\bgroup\ifx c#2\hfil\fi
+    $\m@th\thyristoriptstyle##$\hfil\crcr
+}{%
+  \crcr\egroup\egroup
+}
+\makeatother
+\renewcommand{\substack}[2][c]{\subarray[#1]{c}#2\endsubarray}
+%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+\onehalfspacing %espaçamento entre linhas
+%\setlength{\parindent}{0cm} %identação dos parágrafos
+\parskip 4pt % espaçamento entre paragrafos
+
+
+\include{Head}
+
+\tableofcontents
+
+\newpage
+
+\section*{Introduction}
+The goal of the cloud computing project is to develop a mobile phone network data processing
+and search system.
+
+\section{Map Reduce implementation }
+\subsection{Map}
+\subsection{Combiner}
+\subsection{Reducer}
+\subsection{Incremental logs}
+
+\section{Databases}
+\subsection{PostgreSQL}
+\subsection{DynamoDB}
+\section{Web Site}
+We developed a web application to allow simple queries over the output data of the MapReduce application.
+The web application is developed using php and javaScript. 
+Those languages are the most used for simple web applications to allow the user to access and querying a 
+database. In fact in our first prototype we store the results of the MapReduce application in a postreSQL database.
+Anyway with php is also simple accessing to a BigTable on DynamoDB, as we did for the final application.
+Three kind of queries are permitted: 
+\subsection{User Interface}
+With the website the user can access the data inserting the request specifications in the input fields.
+To permit this there are three form blocks in the interface, one for each query. 
+After the right insertion of the specifications in the input fields the request is sent to a php page due to 
+accessing the data stored in a webserver.
+The web interface is shown in figure ~\ref{webInterface} avaliable at: server url: \url{ec2-54-200-205-56.us-west-2.compute.amazonaws.com}, 
+load balancer url: \url{ec2-54-201-119-18.us-west-2.compute.amazonaws.com/}.
+\begin{figure}[H]
+      \centering
+      \includegraphics[scale = 0.40]{webInterface}
+      \caption{Illustrative screenshot of index.html}
+      \label{webInterface}
+\end{figure}
+\subsection{PHP: connection with data}
+For retrieving the data stored in the web server (in a DynamoDB BigTable) we use a php page.
+To allow stress test with software like 'siege' or 'jmeter', the querying specifications are passed to this
+page with the GET method, directly written in the URL of the page.
+Getting the attributes, the data are retrieved by the server. 
+For the second and the third query the retrieved data are directly shown to the user, instead for the first 
+query the data are stored in an hidden field for the last elaboration at the client web browser.
+The listing of the php page is attached in the code ~\ref{php_code} and an example of the web application is
+shown in figure ~\ref{phpPage}, available using the \url{http://ec2-54-200-205-56.us-west-2.compute.amazonaws.com/query.php?id=C1&date=2013%2F10%2F22&time=08&submit=query2}
+\begin{figure}[H]
+      \centering
+      \includegraphics[scale = 0.40]{phpPage}
+      \caption{Second query in query.php}
+      \label{phpPage}
+\end{figure}
+\begingroup \fontsize{7pt}{7pt}\selectfont
+\label{php_code}
+\begin{verbatim}
+ <?php
+//AWS connection
+  require '../aws/aws-autoloader.php';
+  use Aws\DynamoDb\DynamoDbClient;
+  $client=DynamoDbClient::factory(array(
+    'key' => 'AKIAJSRJRTI5GRQNROMA',
+    'secret' => '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',
+    'region' => 'us-west-2'
+  ));
+//FORM GET STUFF
+  $submit = $_GET['submit'];
+  $date = $_GET['date'];
+  $id = $_GET['id'];
+  $dateId=$date."-".$id;
+  $time = "";
+  $sql = "";
+//DynamoDb getItem
+  if ($submit!="query2"){
+  if($submit == "query1"){
+    $result = $client ->getItem(array(
+        'ConsistentRead' => true,
+        'TableName' => 'CN_logs',
+        'Key' => array('date-id' => array('S'=>$dateId)),
+        'AttributesToGet' => array('value')
+        ));
+  $output = $result['Item']['value']['SS'];
+    }
+  else{
+    $result = $client ->getItem(array(
+      'ConsistentRead' => true,
+      'TableName' => 'CN_logs',
+      'Key' => array('date-id' => array('S'=>$dateId)),
+      'AttributesToGet' => array('number')
+      ));
+  $output = $result['Item']['number']['SS'];
+  }
+  }
+  else{
+  $time = $_GET['time'];
+  $dateId=$dateId.":".$time;
+  $result = $client ->getItem(array(
+        'ConsistentRead' => true,
+        'TableName' => 'CN_logs',
+        'Key' => array('date-id' => array('S'=>$dateId)),
+        'AttributesToGet' => array('value')
+        ));
+  $output = $result['Item']['value']['SS'];
+  }
+  echo "<div id='queryResult'>Results: <input type='hidden' id='queryNumber' value='$submit'/>";
+  echo "<div id='out'>";
+  if($submit!="query1"){
+    echo "<table>";
+    for ($i=0;$i<sizeof($output);$i++)
+    echo "<tr><td>$output[$i]</td></tr>";
+    echo "</table></div>";
+  }
+  else{
+    echo "</div><input type='hidden' id='campo' value='";
+    for ($i=0;$i<sizeof($output);$i++)
+    echo $output[$i];
+    echo"'/>";
+  }
+  echo "</div>";
+?>
+  <div id="developer"> 
+  <h1>Cloud Computing Project</h1>
+  <br/> Developer: Rodrigo, Samuel and Filippo.
+  </div>
+  <div id="queryContainer">
+  <h2>Chose a query and insert the specification</h2>
+    <div class="queryForm">
+    Query 1
+    <form name="query1" id="query1" method="get" action="query.php" onsubmit="return sendQuery(this)">
+      phoneId:<input type="text" name="id" id="phoneId1" value="phoneId" onclick="whiteField(this,'phoneId')"></i>
+      date:<input type="text" name="date" id="date1" value="date" onclick="whiteField(this,'date')"></i>
+      <input type="submit" name="submit" id="submit1" value ="query1"></i>
+    </form>
+  </div>
+  <div class="queryForm">
+    Query 2
+    <form name="query2" id="query2" method="get" action="query.php" onsubmit="return sendQuery(this)">
+        cellId:<input type="text" name="id" id="cellId2" value="cellId" onclick="whiteField(this,'cellId')"></i>
+        date:<input type="text" name="date" id="date2" value="date" onclick="whiteField(this,'date')"></i>
+        time:<input type="text" name="time" id="time2" value="time" onclick="whiteField(this,'time')"></i>
+
+        <input type="submit" name="submit" id="submit" value= "query2"></i>
+    </form>
+  </div>
+  <div class="queryForm">
+    Query 3
+    <form name="query3" id="query3" method="get" action="query.php" onsubmit="return sendQuery(this)">
+        phoneId:<input type="text" name="id" id="phoneID3" value="phoneId" onclick="whiteField(this,'phoneId')"></i>
+        date:<input type="text" name="date" id="date3" value="date" onclick="whiteField(this,'date')"></i>
+        <input type="submit" name="submit" id="submit3" value="query3"></i>
+    </form>
+      </div>
+    </div>
+</body>
+</html>
+
+\end{verbatim}
+\endgroup
+\subsection{JavaScript: last elaboration}
+As we saved the data in DynamoDB in a common table, the first query data needs one more elaboration step 
+before be shown to the user. In fact we decided to elaborate the network logs by an unique MapReduce application
+and store them in the most generic way in a common BigTable. To do this we decide to store int the fields of
+the cells visited by a phoneId in a day also the time for having the sequence of the cells order by time.
+The first query require only the ordered sequence of the cells, not the time. So by a javaScript function 
+the results is 
+\begingroup \fontsize{7pt}{7pt}\selectfont
+\begin{verbatim}
+drop table if exists composer;
+drop table if exists track;
+drop table if exists soundtrack;
+drop table if exists author;
+drop table if exists actor;
+drop table if exists movie;
+drop table if exists person;
+drop table if exists book;
+\end{verbatim}
+ \endgroup
+\begin{verbatim}
+create table person
+      (city varchar(255),
+       name varchar(255),
+       country varchar(255),
+       birthday date,
+       primary key(name));
+\end{verbatim}
+\section{Load balancing and autoscaling}
+\subsection{Instance}
+\subsection{Autoscaling}
+\subsection{Load balancing}
+
+\section{Evaluation and Plots}
+An example is shown in figure~\ref{deleteMovie}.
+
+
+\section{Conclusion}
+\end{document}
+
+
+
+

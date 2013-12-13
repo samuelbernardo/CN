@@ -1,0 +1,19 @@
+\select@language {english}
+\contentsline {section}{\numberline {1}Map Reduce implementation }{3}{section.1}
+\contentsline {subsection}{\numberline {1.1}Map}{3}{subsection.1.1}
+\contentsline {subsection}{\numberline {1.2}Combiner}{3}{subsection.1.2}
+\contentsline {subsection}{\numberline {1.3}Reducer}{3}{subsection.1.3}
+\contentsline {subsection}{\numberline {1.4}Incremental logs}{3}{subsection.1.4}
+\contentsline {section}{\numberline {2}Databases}{3}{section.2}
+\contentsline {subsection}{\numberline {2.1}PostgreSQL}{3}{subsection.2.1}
+\contentsline {subsection}{\numberline {2.2}DynamoDB}{3}{subsection.2.2}
+\contentsline {section}{\numberline {3}Web Site}{3}{section.3}
+\contentsline {subsection}{\numberline {3.1}User Interface}{3}{subsection.3.1}
+\contentsline {subsection}{\numberline {3.2}PHP: connection with data}{4}{subsection.3.2}
+\contentsline {subsection}{\numberline {3.3}JavaScript: last elaboration}{6}{subsection.3.3}
+\contentsline {section}{\numberline {4}Load balancing and autoscaling}{7}{section.4}
+\contentsline {subsection}{\numberline {4.1}Instance}{7}{subsection.4.1}
+\contentsline {subsection}{\numberline {4.2}Autoscaling}{7}{subsection.4.2}
+\contentsline {subsection}{\numberline {4.3}Load balancing}{7}{subsection.4.3}
+\contentsline {section}{\numberline {5}Evaluation and Plots}{7}{section.5}
+\contentsline {section}{\numberline {6}Conclusion}{7}{section.6}
