@@ -145,8 +145,8 @@ query.php
 require '../aws/aws-autoloader.php';
 use Aws\DynamoDb\DynamoDbClient;
 $client=DynamoDbClient::factory(array(
-  'key' => 'AKIAJSRJRTI5GRQNROMA',
-  'secret' => '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',
+  'key' => '...',
+  'secret' => '...',
   'region' => 'us-west-2'
 ));
 //FORM GET STUFF
@@ -325,11 +325,15 @@ Third & 4028 & 99.90 & 1199.80 & 0.49 \\ \hline
 \begin{figure}[H]
       \centering
       \includegraphics[scale = 0.40]{test4}
-      \caption{Fourth straight test of the load balancer website}
+      \caption{Fourth straight test of the load balancer websitei}
       \label{load_balancer_test4}
 \end{figure}
 
+All the four tests are very similar, we just increased the number of requests in parallel. The fourth one is composed by three sequences of different request rates. By analyzing all the give information it is possible to state that the mechanisms placed in practise (policies and other scaling rules) produced the expected behaviour by always trying to minimize the CPU load or minimize the number of machines.
+
 \section{Conclusion}
+
+Finally we would like to say that we believe that to have fulfilled all the goals proposed by the project specification with good results. Both our MapReduce application and the load balancing and auto scaling mechanisms are effective and efficient.
 \end{document}
 
 
